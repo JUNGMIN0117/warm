@@ -15,17 +15,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
 
-class Undertone(str, Enum):
+# str+Enum 다중 상속 대신 3.11+의 StrEnum을 쓴다. str()이 멤버 이름이 아니라
+# 값("spring_warm")을 돌려주므로 FastAPI/JSON 직렬화 시 놀라움이 없다.
+class Undertone(StrEnum):
     """언더톤 — 4계절 분류의 1차 축."""
 
     WARM = "warm"
     COOL = "cool"
 
 
-class Season(str, Enum):
+class Season(StrEnum):
     """4계절 퍼스널 컬러 타입."""
 
     SPRING_WARM = "spring_warm"

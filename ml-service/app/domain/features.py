@@ -145,7 +145,7 @@ def extract_features(
     _, chroma, hue_angle = (float(v) for v in lab_to_lch(median_lab))
 
     q1, q3 = np.percentile(lab[:, 0], [25.0, 75.0])
-    median_rgb = np.median(pixels, axis=0)
+    median_rgb = np.clip(np.median(pixels, axis=0), 0.0, 255.0)
 
     return SkinFeatures(
         lightness=lightness,
@@ -155,6 +155,12 @@ def extract_features(
         hue_angle=hue_angle,
         ita=compute_ita(lightness, b_star),
         lightness_spread=float(q3 - q1),
-        pixel_count=int(len(pixels)),
-        mean_rgb=tuple(int(round(v)) for v in np.clip(median_rgb, 0, 255)),  # type: ignore[misc]
+        pixel_count=len(pixels),
+        # 제너레이터+tuple() 대신 명시적 3-튜플로 만든다. tuple[int, ...]이 아니라
+        # tuple[int, int, int]임을 mypy가 증명할 수 있어 type: ignore가 필요 없다.
+        mean_rgb=(
+            round(float(median_rgb[0])),
+            round(float(median_rgb[1])),
+            round(float(median_rgb[2])),
+        ),
     )

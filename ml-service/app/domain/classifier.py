@@ -249,7 +249,7 @@ def classify(
     exp_scores = np.exp(logits)
     probs = exp_scores / exp_scores.sum()
 
-    probabilities = {season: float(p) for season, p in zip(seasons, probs)}
+    probabilities = {season: float(p) for season, p in zip(seasons, probs, strict=True)}
     best_index = int(np.argmax(probs))
     best_season = seasons[best_index]
 

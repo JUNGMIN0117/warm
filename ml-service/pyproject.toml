@@ -25,6 +25,8 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "SIM", "RUF"]
+# ×(곱셈 기호)는 docstring 수식 표기로 의도적으로 사용한다 (docs/03-color-theory.md와 표기 통일).
+allowed-confusables = ["×"]
 
 [tool.mypy]
 python_version = "3.12"

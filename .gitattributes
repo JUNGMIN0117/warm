@@ -1,0 +1,15 @@
+# 저장소 내 개행은 LF로 통일한다.
+# Windows에서 개발하고 Linux(CI·Docker)에서 실행하는 프로젝트이므로
+# 플랫폼별 CRLF 혼입을 원천 차단한다.
+* text=auto eol=lf
+
+# Windows 전용 스크립트만 예외
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 바이너리는 변환 금지
+*.png binary
+*.jpg binary
+*.ico binary
+*.onnx binary
+*.task binary
