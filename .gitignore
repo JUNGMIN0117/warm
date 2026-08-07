@@ -15,6 +15,10 @@ datasets/
 *.pt
 *.h5
 
+# 모델 가중치 — scripts/download_models.py로 받는다
+models/
+*.task
+
 # Java
 build/
 .gradle/

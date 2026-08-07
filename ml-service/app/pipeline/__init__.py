@@ -11,9 +11,24 @@
 파이프라인 순서와 각 단계의 이유는 docs/04-preprocessing.md 참조.
 """
 
+from .errors import (
+    ImageDecodeError,
+    ModelNotFoundError,
+    MultipleFacesError,
+    NoFaceDetectedError,
+    PipelineError,
+)
+from .face_detector import DetectedFace, FaceDetector
 from .white_balance import WhiteBalanceMethod, WhiteBalanceResult, apply_white_balance
 
 __all__ = [
+    "DetectedFace",
+    "FaceDetector",
+    "ImageDecodeError",
+    "ModelNotFoundError",
+    "MultipleFacesError",
+    "NoFaceDetectedError",
+    "PipelineError",
     "WhiteBalanceMethod",
     "WhiteBalanceResult",
     "apply_white_balance",
