@@ -19,17 +19,22 @@ from .errors import (
     PipelineError,
 )
 from .face_detector import DetectedFace, FaceDetector
+from .skin_mask import MaskConfig, SkinMask, build_skin_mask, extract_skin_pixels
 from .white_balance import WhiteBalanceMethod, WhiteBalanceResult, apply_white_balance
 
 __all__ = [
     "DetectedFace",
     "FaceDetector",
     "ImageDecodeError",
+    "MaskConfig",
     "ModelNotFoundError",
     "MultipleFacesError",
     "NoFaceDetectedError",
     "PipelineError",
+    "SkinMask",
     "WhiteBalanceMethod",
     "WhiteBalanceResult",
     "apply_white_balance",
+    "build_skin_mask",
+    "extract_skin_pixels",
 ]
