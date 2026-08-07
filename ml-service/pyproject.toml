@@ -5,9 +5,15 @@ description = "퍼스널 컬러 분석 ML 서비스"
 requires-python = ">=3.12"
 dependencies = [
     "numpy>=2.0",
+    # mediapipe가 opencv-contrib-python을 요구하므로 headless 대신 이쪽을 직접 선언한다.
+    # 두 flavor(cv2 제공 패키지)가 공존하면 임포트가 깨지기 때문에 flavor를 통일해야 한다.
+    "opencv-contrib-python>=4.10",
+    "mediapipe>=1.0",
 ]
 
-[project.optional-dependencies]
+# PEP 735 dependency-groups — 배포 대상이 아닌 개발 도구는 optional-dependencies가 아니라
+# 여기 둔다. `uv sync`가 기본으로 dev 그룹까지 설치한다.
+[dependency-groups]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
@@ -31,3 +37,9 @@ allowed-confusables = ["×"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
+
+# mediapipe는 타입 스텁을 제공하지 않는다. 파이프라인 계층에서만 쓰이고
+# 도메인 계층은 여전히 strict 전체 검사를 받는다.
+[[tool.mypy.overrides]]
+module = ["mediapipe.*"]
+ignore_missing_imports = true
