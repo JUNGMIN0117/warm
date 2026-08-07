@@ -11,7 +11,7 @@ from .classifier import (
     ClassificationResult,
     classify,
 )
-from .color_space import lab_to_lch, rgb_to_lab, rgb_to_ycrcb
+from .color_space import lab_to_lch, linear_to_srgb, rgb_to_lab, rgb_to_ycrcb, srgb_to_linear
 from .features import SkinFeatures, compute_ita, extract_features
 from .seasons import SEASON_PROFILES, Season, SeasonProfile, Undertone, get_profile
 
@@ -29,6 +29,8 @@ __all__ = [
     "extract_features",
     "get_profile",
     "lab_to_lch",
+    "linear_to_srgb",
     "rgb_to_lab",
     "rgb_to_ycrcb",
+    "srgb_to_linear",
 ]

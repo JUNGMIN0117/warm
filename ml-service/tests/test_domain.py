@@ -18,7 +18,9 @@ from app.domain import (
     extract_features,
     get_profile,
     lab_to_lch,
+    linear_to_srgb,
     rgb_to_lab,
+    srgb_to_linear,
 )
 
 
@@ -57,6 +59,23 @@ class TestColorSpace:
     def test_batch_shape_is_preserved(self) -> None:
         image = np.random.randint(0, 256, size=(4, 5, 3), dtype=np.uint8)
         assert rgb_to_lab(image).shape == (4, 5, 3)
+
+    def test_gamma_roundtrip_is_identity(self) -> None:
+        """srgb→linear→srgb 왕복이 항등이어야 한다.
+
+        linear_to_srgb는 화이트밸런스(선형 공간 연산)가 결과를 다시
+        이미지로 되돌릴 때 쓰는 역함수라, 왕복 오차는 곧 파이프라인의
+        누적 색 왜곡이 된다.
+        """
+        values = np.linspace(0.0, 1.0, 256)
+        roundtrip = linear_to_srgb(srgb_to_linear(values))
+        np.testing.assert_allclose(roundtrip, values, atol=1e-12)
+
+    def test_linear_to_srgb_clips_negative_input(self) -> None:
+        """음수 입력(수치 오차로 발생 가능)이 NaN을 만들면 안 된다."""
+        result = linear_to_srgb(np.array([-0.01, 0.0, 0.5]))
+        assert np.all(np.isfinite(result))
+        assert result[0] == 0.0
 
 
 class TestITA:

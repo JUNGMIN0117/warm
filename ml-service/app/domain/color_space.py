@@ -55,6 +55,24 @@ def srgb_to_linear(rgb: NDArray[np.floating]) -> NDArray[np.float64]:
     return np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
 
 
+def linear_to_srgb(linear_rgb: NDArray[np.floating]) -> NDArray[np.float64]:
+    """선형 RGB를 sRGB 감마 인코딩으로 되돌린다. `srgb_to_linear`의 역함수.
+
+    화이트밸런스처럼 선형 공간에서 수행해야 하는 연산(조명은 물리적으로
+    반사율에 '곱해지는' 항이다)을 마친 뒤, 결과를 다시 일반 이미지로
+    저장·표시하기 위해 필요하다.
+
+    음수 입력은 0으로 클리핑한다. 거듭제곱(1/2.4)이 음수에서 NaN을
+    만들기 때문이며, 유효한 선형 RGB는 어차피 음수가 될 수 없다.
+    """
+    linear_rgb = np.clip(np.asarray(linear_rgb, dtype=np.float64), 0.0, None)
+    return np.where(
+        linear_rgb <= 0.0031308,  # = 0.04045 / 12.92, 인코딩 곡선의 선형 구간 경계
+        linear_rgb * 12.92,
+        1.055 * linear_rgb ** (1.0 / 2.4) - 0.055,
+    )
+
+
 def linear_to_xyz(linear_rgb: NDArray[np.floating]) -> NDArray[np.float64]:
     """선형 RGB를 CIEXYZ로 변환한다. 결과 스케일은 0~100."""
     linear_rgb = np.asarray(linear_rgb, dtype=np.float64)
