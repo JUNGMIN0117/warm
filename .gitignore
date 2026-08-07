@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# 데이터 — 저작권 문제로 절대 커밋하지 않음
+data/
+datasets/
+*.npy
+*.onnx
+*.pt
+*.h5
+
+# Java
+build/
+.gradle/
+*.class
+
+# Node
+node_modules/
+.next/
+
+# 환경변수
+.env
+.env.local
+
+# OS
+.DS_Store
