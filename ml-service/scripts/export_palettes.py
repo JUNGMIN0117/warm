@@ -16,8 +16,10 @@ ADR-005에서 팔레트·한국어 라벨·스타일링 팁의 소유권을 Spri
 사용법:
     uv run python scripts/export_palettes.py                     # JSON을 stdout으로
     uv run python scripts/export_palettes.py -o out.json
+    # SQL 시드 재생성 (경로는 backend 마이그레이션 디렉터리)
     uv run python scripts/export_palettes.py --format sql \\
-        -o ../backend/backend-infrastructure/src/main/resources/db/migration/V3__seed_season_catalog.sql
+        -o ../backend/backend-infrastructure/src/main/resources/db/migration/\\
+V3__seed_season_catalog.sql
 
 SQL 출력이 Flyway 마이그레이션이 된다. 손으로 타이핑하지 않는 것이 요점이다 —
 48개 색상 코드를 사람이 옮겨 적으면 오타가 나고, 그 오타는 UI에 이상한 색이
@@ -34,7 +36,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.domain.seasons import SEASON_PROFILES, Season  # noqa: E402
+from app.domain.seasons import SEASON_PROFILES, Season
 
 
 def _profile_to_dict(season: Season) -> dict[str, Any]:
