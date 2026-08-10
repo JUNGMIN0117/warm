@@ -1,8 +1,15 @@
 # ADR-001. Spring Boot + FastAPI 폴리글랏 MSA
 
-- **상태**: 채택
+- **상태**: 채택 (일부 항목은 ADR-006이 갱신)
 - **결정일**: 2026-08-07
-- **관련**: ADR-002 (데이터 전략), ADR-003 (분류 범위)
+- **관련**: ADR-002 (데이터 전략), ADR-003 (분류 범위), [ADR-006](ADR-006-build-and-modules.md)
+
+> **부분 갱신 안내** — 이 문서의 핵심 결정(Java와 Python을 둘 다 쓰고 HTTP로 경계를 긋는다)은 유효합니다. 다만 아래 두 항목은 [ADR-006](ADR-006-build-and-modules.md)이 대체했습니다.
+>
+> - 빌드 도구: Gradle Kotlin DSL → **Maven + Wrapper**
+> - Spring Boot 버전: 3.4 → **4.1** (3.x는 start.spring.io에서 제공 종료)
+>
+> 본문의 다이어그램과 스택 표기는 결정 당시 기록이므로 고치지 않고 그대로 둡니다.
 
 ---
 

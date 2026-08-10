@@ -31,7 +31,7 @@
 
 ```
 ┌──────────────┐      ┌────────────────────┐      ┌──────────────────┐
-│   Next.js    │─────▶│   Spring Boot 3.4  │─────▶│  FastAPI         │
+│   Next.js    │─────▶│   Spring Boot 4.1  │─────▶│  FastAPI         │
 │   React 19   │◀─────│   Java 21          │◀─────│  Python 3.12     │
 │   (Web)      │      │   API · 인증 · 이력  │      │  CV · ML 추론     │
 └──────────────┘      └─────────┬──────────┘      └──────────────────┘
@@ -75,7 +75,7 @@ Java와 Python 중 하나를 고르지 않고 둘 다 쓰는 이유는 [ADR-001]
 
 ## 기술 스택
 
-**Backend (Java)** — Java 21 · Spring Boot 3.4 · Spring Data JPA · Spring Security (JWT) · WebClient · Gradle (Kotlin DSL) · PostgreSQL 16 · Flyway · Redis
+**Backend (Java)** — Java 21 · Spring Boot 4.1 · Spring Data JPA · Spring Security (JWT) · WebClient · Resilience4j · Maven (멀티모듈) · PostgreSQL 16 · Flyway · Redis
 
 **ML Service (Python)** — Python 3.12 · FastAPI · OpenCV · MediaPipe · NumPy · ONNX Runtime · PyTorch
 
@@ -130,3 +130,9 @@ cd ml-service && uv run uvicorn app.api.main:app --reload --port 8000
 ```
 
 기동 후 **`http://127.0.0.1:8000/docs`** 에서 스키마를 보고 사진을 올려볼 수 있습니다. Windows에서 `localhost`는 IPv6(`::1`)로 먼저 해석되는데 uvicorn은 IPv4에만 바인딩하므로, 반드시 `127.0.0.1`로 접속하세요 ([05-api-spec.md §8](docs/05-api-spec.md)).
+
+Spring 백엔드는 Maven Wrapper로 빌드합니다. Maven을 따로 설치할 필요가 없고, JDK 21만 있으면 됩니다.
+
+```bash
+cd backend && ./mvnw verify
+```
