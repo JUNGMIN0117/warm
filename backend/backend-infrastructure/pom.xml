@@ -60,6 +60,12 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-webflux</artifactId>
     </dependency>
+    <!-- 비밀번호 해싱만 필요하다. starter-security 전체(웹 필터·인증 매니저)는
+         API 계층의 관심사이므로 여기서는 crypto 모듈만 가져온다. -->
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-crypto</artifactId>
+    </dependency>
     <dependency>
       <groupId>io.github.resilience4j</groupId>
       <artifactId>resilience4j-circuitbreaker</artifactId>

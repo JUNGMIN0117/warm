@@ -37,6 +37,15 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
 
+jwt:
+  # 기본값을 두지 않는다. 기본 서명 키는 그대로 배포되고, 소스가 공개된
+  # 프로젝트에서 그것은 누구나 토큰을 위조할 수 있다는 뜻이다.
+  # 없으면 기동이 실패한다 — 조용히 뚫려 있는 것보다 낫다.
+  #   생성 예: openssl rand -base64 48
+  secret: ${PCAI_JWT_SECRET}
+  access-token-ttl: 12h
+  issuer: personal-color-ai
+
 # ml-service 연동
 ml-service:
   base-url: ${ML_SERVICE_URL:http://127.0.0.1:8000}
