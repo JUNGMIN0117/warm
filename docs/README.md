@@ -39,7 +39,7 @@
 | [03-color-theory.md](03-color-theory.md) | 색채 이론과 분류 알고리즘 | ✅ |
 | [04-preprocessing.md](04-preprocessing.md) | 전처리 파이프라인 | ✅ |
 | [05-api-spec.md](05-api-spec.md) | API 명세 (게이트웨이 + ML 서비스) | ✅ |
-| 06-frontend.md | UX 설계 의도 | Step 4 |
+| [06-frontend.md](06-frontend.md) | 프론트엔드 UX 설계 의도 | ✅ |
 | [07-decisions/](07-decisions/) | ADR 6건 | ✅ |
 | 08-retrospective.md | 원본 대비 개선점 회고 | Step 6 |
 | [09-data-model.md](09-data-model.md) | 데이터 모델 상세 | ✅ |

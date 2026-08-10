@@ -97,7 +97,13 @@ FastAPI는 **완전 무상태**를 유지한다. DB·인증·세션 금지. 입�
   - **원본 이미지는 저장하지 않는다.** 해시·측정 수치·대표 피부색만.
     스키마에 컬럼 자체가 없고 테스트가 그것을 지킨다
   - JWT 서명 키에 기본값 없음 — 없으면 기동 실패 (`PCAI_JWT_SECRET`)
-- [ ] **Step 4** — Next.js 프론트 (업로드/웹캠 → 전처리 단계 시각화 → 결과 카드 + 3축 게이지 + 팔레트)
+- [x] **Step 4** — Next.js 프론트 (`web/`)
+  - 업로드/웹캠 → 전처리 5단계 시각화 → 결과(3축 게이지 + 확률 분포 + 팔레트)
+  - 홈 = 분석 흐름 (랜딩 분리 안 함). 상태 전이 idle→pending→success/error, 근거는 접지 않고 펼침
+  - `topTwoMargin < 0.15` → 단정 대신 "두 계절 사이" 병기. 정확도 % 주장 부재를 테스트가 고정
+  - shadcn CLI 3.x는 **Base UI 기반** — `asChild` 없음, `render` prop + `nativeButton={false}` (노트 §2.14)
+  - JWT는 localStorage + 서버 `expiresAt`만으로 만료 판단 (JWT 디코드 금지). 근거: docs/06 §4
+  - 검증: `cd web && pnpm test && pnpm typecheck && pnpm lint` (29 tests)
 - [ ] **Step 5** — CNN 학습(pseudo-label) + 규칙 엔진 대비 평가 + Grad-CAM으로 P2 검증
 - [ ] **Step 6** — Docker Compose 통합, CI, 배포
 
@@ -181,8 +187,12 @@ cd ml-service && uv sync && uv run python scripts/download_models.py
 ```
 
 ```bash
-cd ml-service && uv run pytest -q                                  # 80 passed 여야 정상
+cd ml-service && uv run pytest -q                                  # 104 passed 여야 정상 (README 테스트 표 참조)
 cd ml-service && uv run ruff check . && uv run mypy app/ tests/ scripts/
+```
+
+```bash
+cd web && pnpm test && pnpm typecheck && pnpm lint                 # 29 passed 여야 정상
 ```
 
 모델 파일이 없으면 MediaPipe 실추론 테스트는 skip되고 나머지는 통과한다 — CI에서 모델 없이도 대부분의 회귀를 잡을 수 있게 의도한 설계다.

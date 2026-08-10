@@ -8,7 +8,7 @@
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-6DB33F)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791)
-![Tests](https://img.shields.io/badge/tests-238%20passing-success)
+![Tests](https://img.shields.io/badge/tests-267%20passing-success)
 
 ---
 
@@ -55,7 +55,7 @@ H2를 쓰지 않습니다. 스키마가 `jsonb`·정규식 `CHECK`·함수 인�
 ```
 ┌───────────────┐       ┌──────────────────────────┐       ┌─────────────────┐
 │   Next.js 15  │──────▶│    Spring Boot 4.1       │──────▶│    FastAPI      │
-│   (Step 4)    │◀──────│    Java 21               │◀──────│   Python 3.12   │
+│   React 19    │◀──────│    Java 21               │◀──────│   Python 3.12   │
 │               │       │  인증 · 이력 · 추천 · 캐시  │       │  측정 · 판정      │
 └───────────────┘       └────────────┬─────────────┘       └─────────────────┘
                                      │                          무상태 · 결정론적
@@ -125,6 +125,20 @@ CachingAnalyzer                     캐시 히트면 아래로 내려가지 않�
 | NumPy | 2.x | 색채 통계 |
 | uv | 0.12 | 락파일 기반 재현 가능 빌드 |
 | pytest · ruff · mypy(strict) | | |
+
+### Frontend (web/)
+
+| 기술 | 버전 | 선택 이유 |
+|---|---|---|
+| Next.js | 15.5 | App Router. 결과 화면의 근거 시각화가 목적이라 서버 컴포넌트보다 클라이언트 상태 전이가 중심 |
+| React | 19 | |
+| TypeScript | 5 (strict) | `any` 금지. API 계약(05-api-spec §10)을 타입으로 옮겨 명세 변경이 컴파일 오류가 되게 |
+| Tailwind CSS | 4 | |
+| shadcn/ui | CLI 3.x (**Base UI 기반**) | Radix가 아니라 `render` prop 합성 — 함정은 [10-engineering-notes §2.14](docs/10-engineering-notes.md) |
+| TanStack Query | 5 | 서버 상태 전담. mutation 자동 재시도 OFF — 서킷 브레이커 복구 방해 금지 |
+| Motion | 12 | 결과 공개 애니메이션 |
+| Vitest + Testing Library | 4 | jsdom에서 규칙 검증 (픽셀이 아니라 규칙) |
+| pnpm | 10 | |
 
 ### Infra
 
@@ -263,7 +277,7 @@ erDiagram
 
 ### 사전 요구
 
-JDK 21 · [uv](https://docs.astral.sh/uv/) · Docker (PostgreSQL·Redis용)
+JDK 21 · [uv](https://docs.astral.sh/uv/) · Node.js 22 + pnpm · Docker (PostgreSQL·Redis용)
 
 ### 1. 인프라
 
@@ -298,7 +312,15 @@ JWT 서명 키에는 **기본값이 없습니다.** 없으면 기동이 실패�
 cd backend && PCAI_JWT_SECRET=$(openssl rand -base64 48) ./mvnw spring-boot:run -pl backend-api
 ```
 
-### 4. 호출
+### 4. 프론트엔드
+
+```bash
+cd web && pnpm install && pnpm dev
+```
+
+`http://localhost:3000` — 게이트웨이 주소가 기본값(`localhost:8080`)과 다르면 `NEXT_PUBLIC_API_BASE_URL`로 지정.
+
+### 5. 직접 호출
 
 ```bash
 curl -F "image=@face.jpg" http://127.0.0.1:8080/api/v1/analyses
@@ -316,6 +338,10 @@ cd ml-service && uv run pytest -q && uv run ruff check . && uv run mypy app/ tes
 cd backend && ./mvnw verify
 ```
 
+```bash
+cd web && pnpm test && pnpm typecheck && pnpm lint
+```
+
 | 층위 | 무엇이 진짜인가 | 개수 |
 |---|---|---|
 | 도메인 단위 | 아무것도 (순수 함수) | 93 |
@@ -324,7 +350,8 @@ cd backend && ./mvnw verify
 | 파이프라인·API (Python) | 합성 이미지, TestClient | 70 |
 | 영속화 통합 | **PostgreSQL 16** | 17 |
 | 종단 통합 | **PostgreSQL + Redis + 전체 컨텍스트** | 16 |
-| | **합계** | **238** |
+| 프론트 (TypeScript) | jsdom, 명세 예시 응답 픽스처 | 29 |
+| | **합계** | **267** |
 
 **실존 인물 사진이 저장소에 없습니다.** 파이프라인 테스트는 합성 얼굴(피부색 타원 + 도형)로 검증합니다. 눈과 입술을 **일부러 피부색으로 칠해** 색·밝기로는 걸러질 수 없게 만들고, 오직 랜드마크 폴리곤 제외만이 그 픽셀을 제거할 수 있음을 증명합니다.
 
@@ -387,6 +414,12 @@ personal-color-ai/
 │   │   └── api/                      HTTP 계층
 │   └── scripts/                      모델 다운로드 · 검출기 비교 · 팔레트 export
 │
+├── web/                              Next.js 15 프론트엔드
+│   └── src/
+│       ├── lib/                      API 계약 타입 · 클라이언트 · 판정 해석 규칙
+│       ├── components/               업로드 · 파이프라인 시각화 · 결과(게이지·팔레트)
+│       └── app/                      분석 흐름 · 인증 · 이력
+│
 └── docs/                             설계 문서 + ADR
 ```
 
@@ -398,7 +431,7 @@ personal-color-ai/
 - [x] **Step 1** — 전처리 파이프라인: 얼굴 검출 · 화이트밸런스 · 피부 마스킹
 - [x] **Step 2** — FastAPI 무상태 추론 서비스
 - [x] **Step 3** — Spring Boot 게이트웨이: 멀티모듈 · JWT · JPA · Redis · 서킷 브레이커
-- [ ] **Step 4** — Next.js 프론트엔드
+- [x] **Step 4** — Next.js 프론트엔드: 업로드/웹캠 · 전처리 시각화 · 결과(3축 게이지·팔레트)
 - [ ] **Step 5** — CNN 학습 + 규칙 엔진 대비 평가 + Grad-CAM으로 P2 검증
 - [ ] **Step 6** — Docker Compose · CI · 배포
 
@@ -414,6 +447,7 @@ personal-color-ai/
 | [03-color-theory.md](docs/03-color-theory.md) | 색채 이론과 분류 알고리즘 |
 | [04-preprocessing.md](docs/04-preprocessing.md) | 전처리 파이프라인 |
 | [05-api-spec.md](docs/05-api-spec.md) | API 명세 (게이트웨이 + ML) |
+| [06-frontend.md](docs/06-frontend.md) | 프론트엔드 UX 설계 의도 |
 | [09-data-model.md](docs/09-data-model.md) | 데이터 모델 상세 — 스키마 설계 근거 |
 | [10-engineering-notes.md](docs/10-engineering-notes.md) | **개념 정리 + 면접 대비** |
 | [07-decisions/](docs/07-decisions/) | ADR 6건 |
