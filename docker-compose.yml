@@ -1,0 +1,98 @@
+# 전체 스택 로컬 실행.
+#
+#   docker compose up --build
+#
+# 설계 원칙 하나: **ml-service를 호스트에 노출하지 않는다.** 그 서비스에는
+# 인증이 없고 내부 네트워크 전제로 만들어졌다(01-architecture §9).
+# 게이트웨이만 8080을 열고, ml-service는 Compose 네트워크 안에서만 보인다.
+
+name: personal-color-ai
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-personalcolor}
+      POSTGRES_USER: ${DB_USERNAME:-personalcolor}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-personalcolor}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    # DB만 호스트에 연다. 데이터를 직접 확인할 일이 실제로 있기 때문이다.
+    # 포트가 겹치면 .env에서 DB_PORT를 바꾼다. 운영에서는 이 매핑을 지운다.
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      # pg_isready만으로는 부족하다 — 초기화 스크립트가 도는 동안에도
+      # 잠깐 준비됨으로 보고하는 구간이 있어, 실제 DB 이름까지 확인한다.
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-personalcolor} -d ${DB_NAME:-personalcolor}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    # 캐시 전용이라 영속화를 끈다. 재시작하면 캐시가 비지만, 그건
+    # 성능 문제일 뿐 정확성 문제가 아니다(CachingAnalyzer 참조).
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    # 호스트에 열지 않는다. 게이트웨이가 Compose 네트워크 안에서 서비스
+    # 이름으로 접근하므로 필요가 없고, 6379는 다른 프로젝트와 충돌하기
+    # 쉬운 포트다. 들여다볼 일이 있으면 아래로 붙는다.
+    #   docker compose exec redis redis-cli
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  ml-service:
+    build:
+      context: ./ml-service
+    environment:
+      PCAI_DETECTOR_POOL_SIZE: ${ML_DETECTOR_POOL_SIZE:-2}
+    # 포트를 노출하지 않는다 — 위 주석 참조.
+    # 디버깅이 필요하면 아래 두 줄의 주석을 풀고 127.0.0.1로 접속한다.
+    # ports:
+    #   - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status == 200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      # 모델 로딩(검출기 풀 크기만큼)에 시간이 걸린다. 이 값이 짧으면
+      # 정상 기동 중인 컨테이너가 unhealthy로 찍힌다.
+      start_period: 45s
+
+  backend:
+    build:
+      context: ./backend
+    depends_on:
+      # service_started가 아니라 service_healthy다. DB가 포트를 연 것과
+      # 쿼리를 받을 준비가 된 것은 다르고, 그 사이에 Flyway가 돌면 실패한다.
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ml-service:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME:-personalcolor}
+      DB_USERNAME: ${DB_USERNAME:-personalcolor}
+      DB_PASSWORD: ${DB_PASSWORD:-personalcolor}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      ML_SERVICE_URL: http://ml-service:8000
+      # 기본값을 주지 않는다. .env에 없으면 Compose가 빈 값을 넘기고
+      # 애플리케이션이 기동을 거부한다 — 의도된 동작이다(JwtProperties).
+      PCAI_JWT_SECRET: ${PCAI_JWT_SECRET}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+
+volumes:
+  db-data:

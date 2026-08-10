@@ -4,6 +4,7 @@
 >
 > Java 21 · Spring Boot 4.1 · Python 3.12 · FastAPI · PostgreSQL 16 · Redis · Docker
 
+[![CI](https://github.com/JUNGMIN0117/warm/actions/workflows/ci.yml/badge.svg)](https://github.com/JUNGMIN0117/warm/actions/workflows/ci.yml)
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-6DB33F)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB)
@@ -259,23 +260,45 @@ erDiagram
 
 ## 실행 방법
 
-> **현재 Docker Compose가 없습니다** (Step 6 예정). 아래는 로컬 수동 실행입니다.
-
-### 사전 요구
-
-JDK 21 · [uv](https://docs.astral.sh/uv/) · Docker (PostgreSQL·Redis용)
-
-### 1. 인프라
+**Docker만 있으면 됩니다.** JDK나 Python을 설치할 필요 없습니다.
 
 ```bash
-docker run -d --name pcai-db -e POSTGRES_DB=personalcolor -e POSTGRES_USER=personalcolor -e POSTGRES_PASSWORD=personalcolor -p 5432:5432 postgres:16-alpine
+cp .env.example .env && echo "PCAI_JWT_SECRET=$(openssl rand -base64 48)" >> .env
 ```
 
 ```bash
-docker run -d --name pcai-redis -p 6379:6379 redis:7-alpine
+docker compose up --build --wait
 ```
 
-### 2. ML 서비스
+네 서비스(PostgreSQL · Redis · ML 서비스 · 게이트웨이)가 순서대로 뜹니다. `--wait`는 모든 헬스체크가 통과할 때까지 기다립니다.
+
+```bash
+curl -F "image=@face.jpg" http://127.0.0.1:8080/api/v1/analyses
+```
+
+### 왜 JWT 키를 직접 만들어야 하나
+
+서명 키에 **기본값을 두지 않았습니다.** 값이 없으면 게이트웨이가 기동을 거부합니다. 기본값은 그대로 배포되고, 소스가 공개된 저장소에서 그것은 누구나 토큰을 위조할 수 있다는 뜻이기 때문입니다.
+
+### 노출되는 포트
+
+| 서비스 | 호스트 | 이유 |
+|---|---|---|
+| 게이트웨이 | `8080` | 유일한 진입점 |
+| PostgreSQL | `5432` | 데이터 확인용. `.env`의 `DB_PORT`로 변경 가능 |
+| Redis | — | Compose 네트워크 내부 전용 |
+| ML 서비스 | — | **인증이 없어 외부에 열면 안 됩니다** |
+
+ML 서비스를 직접 만져보려면 `docker-compose.yml`의 해당 `ports` 주석을 푸세요.
+
+<details>
+<summary>Docker 없이 로컬에서 직접 실행하기</summary>
+
+JDK 21과 [uv](https://docs.astral.sh/uv/)가 필요합니다. 인프라는 컨테이너로 띄웁니다.
+
+```bash
+docker compose up -d db redis
+```
 
 모델 가중치는 저장소에 없습니다. 스크립트가 **버전 고정 URL + SHA-256 검증**으로 받습니다.
 
@@ -287,22 +310,13 @@ cd ml-service && uv sync && uv run python scripts/download_models.py
 cd ml-service && uv run uvicorn app.api.main:app --port 8000
 ```
 
-`http://127.0.0.1:8000/docs` 에서 Swagger UI 확인.
-Windows에서는 `localhost`가 IPv6로 먼저 해석되므로 **반드시 `127.0.0.1`** 로 접속하세요.
-
-### 3. 게이트웨이
-
-JWT 서명 키에는 **기본값이 없습니다.** 없으면 기동이 실패합니다 — 기본 키는 그대로 배포되기 때문입니다.
-
 ```bash
 cd backend && PCAI_JWT_SECRET=$(openssl rand -base64 48) ./mvnw spring-boot:run -pl backend-api
 ```
 
-### 4. 호출
+ML 서비스의 Swagger UI는 `http://127.0.0.1:8000/docs` 입니다. Windows에서는 `localhost`가 IPv6로 먼저 해석되는데 uvicorn은 IPv4에만 바인딩하므로 **반드시 `127.0.0.1`** 로 접속하세요.
 
-```bash
-curl -F "image=@face.jpg" http://127.0.0.1:8080/api/v1/analyses
-```
+</details>
 
 ---
 
@@ -315,6 +329,8 @@ cd ml-service && uv run pytest -q && uv run ruff check . && uv run mypy app/ tes
 ```bash
 cd backend && ./mvnw verify
 ```
+
+CI(GitHub Actions)가 푸시·PR마다 네 단계를 돕니다 — Python 검증(ruff·mypy·pytest), Java 검증(`mvnw verify`, Testcontainers 포함), 컨테이너 이미지 빌드, **Compose 종단 기동**. 마지막 단계는 네 서비스가 올바른 순서로 healthy가 되고 실제 HTTP 호출이 되는지까지 확인합니다.
 
 | 층위 | 무엇이 진짜인가 | 개수 |
 |---|---|---|
@@ -357,9 +373,11 @@ Testcontainers가 Docker를 요구하므로 Docker가 꺼져 있으면 통합 �
 
 **배경 색이 판정에 영향을 줍니다.** 조명 추정을 배경으로 옮긴 대가입니다. 최악 케이스(단색 배경 75%)에서 색상각이 ±5° 흔들립니다.
 
-**관측성이 없습니다.** 상관관계 ID, 구조화 로그, 서킷 브레이커 상태 노출이 모두 미구현입니다 (Step 6).
+**관측성이 없습니다.** 상관관계 ID, 구조화 로그, 서킷 브레이커 상태 노출이 모두 미구현입니다.
 
-**ML 서비스에 인증이 없습니다.** 내부 네트워크 전제이며, Compose 네트워크로 격리하기 전까지 외부에 노출하면 안 됩니다.
+**ML 서비스에 인증이 없습니다.** Compose 네트워크로 격리해 호스트에 노출하지 않지만, 이는 배치로 가린 것이지 서비스 자체가 안전해진 것은 아닙니다. 같은 네트워크 안의 다른 컨테이너는 그대로 접근할 수 있습니다.
+
+**배포 파이프라인이 없습니다.** CI는 검증까지만 하고 이미지를 레지스트리에 올리지 않습니다. 배포할 곳이 정해지지 않아 push 단계를 만들지 않았습니다.
 
 ---
 
@@ -367,6 +385,10 @@ Testcontainers가 Docker를 요구하므로 Docker가 꺼져 있으면 통합 �
 
 ```
 personal-color-ai/
+├── docker-compose.yml                네 서비스 오케스트레이션
+├── .env.example                      필요한 환경변수와 그 이유
+├── .github/workflows/ci.yml          CI — 검증 4단계
+│
 ├── backend/                          Spring Boot 게이트웨이 (Maven 멀티모듈)
 │   ├── backend-domain/               순수 도메인 — 프레임워크 의존 0
 │   │   └── src/main/java/…/domain/
@@ -398,9 +420,10 @@ personal-color-ai/
 - [x] **Step 1** — 전처리 파이프라인: 얼굴 검출 · 화이트밸런스 · 피부 마스킹
 - [x] **Step 2** — FastAPI 무상태 추론 서비스
 - [x] **Step 3** — Spring Boot 게이트웨이: 멀티모듈 · JWT · JPA · Redis · 서킷 브레이커
+- [x] **Compose · CI** — 네 서비스 컨테이너화, GitHub Actions 4단계 검증 *(Step 6에서 앞당김)*
 - [ ] **Step 4** — Next.js 프론트엔드
 - [ ] **Step 5** — CNN 학습 + 규칙 엔진 대비 평가 + Grad-CAM으로 P2 검증
-- [ ] **Step 6** — Docker Compose · CI · 배포
+- [ ] **Step 6** — 관측성 · 배포 파이프라인 · 회고
 
 ---
 
