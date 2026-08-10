@@ -1,6 +1,19 @@
-# 05. API 명세 — ML 추론 서비스
+# 05. API 명세
 
-이 문서는 `ml-service`가 노출하는 HTTP 계약을 설명합니다. 소비자는 Spring 게이트웨이 하나이며, 프론트엔드는 이 서비스를 직접 호출하지 않습니다.
+두 개의 HTTP 계약이 있습니다.
+
+| | 소비자 | 문서 |
+|---|---|---|
+| **Spring 게이트웨이** `/api/v1/**` | 프론트엔드 | [§10 아래](#10-spring-게이트웨이-apiv1) |
+| **ML 서비스** `/v1/**` | Spring 게이트웨이만 | §1~§9 (이 문서 본문) |
+
+아래 본문은 ML 서비스 계약이고, 게이트웨이 계약은 §10에 있습니다. 둘의 관계는 [01-architecture.md](01-architecture.md)를 보세요.
+
+---
+
+## ML 서비스
+
+이 절은 `ml-service`가 노출하는 HTTP 계약을 설명합니다. 소비자는 Spring 게이트웨이 하나이며, 프론트엔드는 이 서비스를 직접 호출하지 않습니다.
 
 기계가 읽는 명세는 서버가 스스로 제공합니다 — 기동 후 `/openapi.json`, 사람이 볼 문서는 `/docs`. 이 문서는 그 스키마가 **왜 그런 모양인지**를 설명합니다.
 
@@ -252,4 +265,146 @@ cd ml-service && uv run uvicorn app.api.main:app --reload --port 8000
 
 **단계 이미지 크기 상한이 합성 이미지 기준입니다.** 400KB라는 숫자는 240×320 합성 얼굴에서 잰 값에 여유를 둔 것입니다. 1600px 실사진에서의 실측은 아직 하지 않았습니다.
 
-**`include_stages`가 캐시 키의 일부입니다.** Spring이 이미지 해시로만 캐시하면 `include_stages=false`로 캐시된 응답이 `true` 요청에 반환될 수 있습니다. Step 3에서 캐시 키에 이 플래그를 포함해야 합니다.
+**`include_stages`가 캐시 키의 일부입니다.** Spring이 이미지 해시로만 캐시하면 `include_stages=false`로 캐시된 응답이 `true` 요청에 반환될 수 있습니다. ~~Step 3에서 캐시 키에 이 플래그를 포함해야 합니다.~~ → **해결됨.** 캐시 키가 `SHA-256(이미지) + include_stages`이고 `stageFlagIsPartOfCacheKey` 테스트가 이를 고정합니다.
+
+---
+
+## 10. Spring 게이트웨이 (`/api/v1`)
+
+프론트엔드가 소비하는 계약입니다. 여기서 측정값(Python)과 큐레이션(DB)이 합쳐집니다.
+
+### 인증
+
+**분석은 로그인 없이 됩니다.** 계정은 이력을 보고 싶은 사람만 만듭니다 ([01-architecture.md §6](01-architecture.md)).
+
+| 엔드포인트 | 인증 | 성공 |
+|---|---|---|
+| `POST /api/v1/auth/register` | 불필요 | 201 |
+| `POST /api/v1/auth/login` | 불필요 | 200 |
+| `POST /api/v1/analyses` | **선택** | 익명 200 · 로그인 201 |
+| `GET /api/v1/analyses` | 필요 | 200 |
+| `GET /api/v1/analyses/{id}` | 필요 | 200 |
+| `GET /api/v1/seasons` | 불필요 | 200 |
+| `GET /api/v1/seasons/{code}` | 불필요 | 200 |
+| `GET /actuator/health` | 불필요 | 200 |
+
+토큰은 `Authorization: Bearer <token>` 헤더로 보냅니다. **잘못된 토큰은 401이 아니라 익명으로 취급**됩니다 — 익명 분석을 막지 않기 위해서입니다.
+
+### `POST /api/v1/auth/register`
+
+```json
+{ "email": "me@example.com", "displayName": "정민", "password": "10자 이상" }
+```
+
+응답에 토큰이 함께 옵니다. 가입하고 다시 로그인하게 만드는 것은 불필요한 마찰입니다.
+
+```json
+{
+  "accessToken": "eyJhbGciOi...",
+  "expiresAt": "2026-08-10T18:00:00Z",
+  "userId": "0b6f...",
+  "displayName": "정민"
+}
+```
+
+`expiresAt`을 주는 이유는 클라이언트가 JWT를 디코드하지 않고도 재로그인 시점을 알게 하기 위해서입니다. 프론트가 payload를 파싱하게 만들면 토큰 구조가 사실상 공개 계약이 됩니다.
+
+### `POST /api/v1/analyses`
+
+`multipart/form-data`, 필드명 `image`. 쿼리 `?includeStages=true`로 단계 이미지 요청.
+
+응답은 ML 응답에 계절 큐레이션을 붙이고 재구성한 것입니다.
+
+```json
+{
+  "id": "…", "analyzedAt": "2026-08-10T09:00:00Z",
+  "saved": false,
+  "season": {
+    "code": "autumn_warm", "labelKo": "가을 웜", "labelEn": "Autumn Warm", "emoji": "🍂",
+    "keywords": ["깊은", "따뜻한", "차분한"],
+    "description": "…",
+    "bestColors": [{ "name": "머스타드", "hex": "#D4A017" }, …],
+    "worstColors": […],
+    "stylingTips": ["…"]
+  },
+  "confidence": 0.822,
+  "probabilities": { "spring_warm": 0.132, "summer_cool": 0.004,
+                     "autumn_warm": 0.822, "winter_cool": 0.042 },
+  "undertone": "warm", "undertoneConfidence": 0.954,
+  "topTwoMargin": 0.690,
+  "axes": [ { "name": "undertone", "rawValue": 68.42, "normalized": 0.783,
+              "lowLabel": "쿨(푸른기)", "highLabel": "웜(노란기)",
+              "interpretation": "웜 성향이 뚜렷합니다" }, … ],
+  "features": { "lightness": 61.0, "hueAngle": 68.42, "ita": 13.55,
+                "itaCategory": "tan", "pixelCount": 12453, "medianRgbHex": "#C68642", … },
+  "preprocessing": { "whiteBalanceMethod": "gray_world", "gains": [1.0, 1.0, 1.0],
+                     "castStrength": 0.0002, "maskCoverageRatio": 0.764 },
+  "qualityFactor": 1.0, "warnings": [],
+  "stages": null
+}
+```
+
+**`saved`가 중요합니다.** 익명 분석은 저장되지 않으므로 프론트가 "이력에 담겼습니다"를 잘못 안내하지 않도록 사실을 그대로 알려줍니다. 상태 코드도 갈립니다 — 익명 200, 로그인 201.
+
+**`topTwoMargin`은 게이트웨이가 계산해 추가한 값**입니다. 절대 확률만 보면 "55%"가 확실해 보이지만 2위가 44%면 사실상 동점입니다. 프론트가 "두 계절 사이입니다"를 판단할 재료입니다.
+
+### `GET /api/v1/analyses`
+
+내 이력, 최신순. `?limit=20` (최대 50).
+
+```json
+[ { "id": "…", "analyzedAt": "…", "seasonCode": "autumn_warm",
+    "seasonLabelKo": "가을 웜", "emoji": "🍂",
+    "confidence": 0.822, "medianRgbHex": "#C68642" } ]
+```
+
+**원본 이미지가 없습니다.** 저장하지 않기 때문이고, 그래서 이력 화면은 대표 색 칩과 수치로 구성됩니다 ([01-architecture.md §5](01-architecture.md)).
+
+### `GET /api/v1/analyses/{id}`
+
+단건. **남의 분석을 요청하면 403이 아니라 404**입니다 — 403은 "그 id는 존재한다"를 알려주는 셈입니다.
+
+### 오류 코드
+
+ML 서비스와 같은 `{code, message, detail}` 형태입니다.
+
+| 코드 | 상태 | 상황 |
+|---|---|---|
+| `VALIDATION_FAILED` | 400 | 입력 형식 오류. `detail`에 필드별 메시지 |
+| `INVALID_REQUEST` | 400 | 도메인 검증 실패 (예: 모르는 계절 코드) |
+| `IMAGE_DECODE_FAILED` | 400 | 빈 파일, 읽기 실패 |
+| `UNAUTHORIZED` | 401 | 인증 필요 |
+| `INVALID_CREDENTIALS` | 401 | 로그인 실패 |
+| `FORBIDDEN` | 403 | 권한 없음 |
+| `NOT_FOUND` | 404 | 없거나 내 것이 아님 |
+| `EMAIL_ALREADY_USED` | 409 | 중복 가입 |
+| `FILE_TOO_LARGE` | 413 | 12MB 초과 |
+| `NO_FACE_DETECTED` · `MULTIPLE_FACES` · `INSUFFICIENT_SKIN_PIXELS` | 422 | ML에서 전파 |
+| `ANALYZER_UNAVAILABLE` | 503 | ML 장애·타임아웃·서킷 오픈 |
+| `CATALOG_UNAVAILABLE` · `INTERNAL_ERROR` | 500 | 서버 문제 |
+
+422 계열의 `message`는 **ML 서비스가 쓴 문구를 그대로 전달**합니다. 실패 원인을 가장 잘 아는 쪽이 측정기이므로 안내도 그쪽이 구체적입니다.
+
+### 게이트웨이 설정
+
+| 변수 | 기본값 | 용도 |
+|---|---|---|
+| `PCAI_JWT_SECRET` | **없음 (필수)** | JWT 서명 키. 없으면 기동 실패 |
+| `ML_SERVICE_URL` | `http://127.0.0.1:8000` | ML 서비스 주소 |
+| `DB_URL` · `DB_USERNAME` · `DB_PASSWORD` | localhost 기본값 | PostgreSQL |
+| `REDIS_HOST` · `REDIS_PORT` | `localhost:6379` | Redis |
+| `SERVER_PORT` | `8080` | |
+
+서명 키에 기본값이 없는 것은 의도입니다 — 기본 키는 그대로 배포됩니다.
+
+```bash
+openssl rand -base64 48
+```
+
+### 로컬 실행
+
+PostgreSQL과 Redis가 필요합니다. ML 서비스도 함께 띄워야 분석이 동작합니다.
+
+```bash
+cd backend && PCAI_JWT_SECRET=$(openssl rand -base64 48) ./mvnw spring-boot:run -pl backend-api
+```

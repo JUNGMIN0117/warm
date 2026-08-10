@@ -34,9 +34,18 @@ import tools.jackson.databind.ObjectMapper;
 @EnableConfigurationProperties(MlServiceProperties.class)
 public class MlServiceConfiguration {
 
+    /**
+     * ml-service 전용 WebClient.
+     *
+     * <p>주입받은 {@code WebClient.Builder} 대신 {@code WebClient.builder()}를
+     * 직접 부른다. Boot 4에서 그 빈이 항상 자동설정되지는 않아 서블릿 스택
+     * 컨텍스트에서 "No qualifying bean of type WebClient$Builder"로 기동이
+     * 실패했다. 이 클라이언트는 Boot의 기본 커스터마이저(코덱·메트릭)가
+     * 필요할 만큼 복잡하지 않으므로, 자동설정에 기대는 대신 직접 만든다.
+     */
     @Bean
-    public WebClient mlServiceWebClient(WebClient.Builder builder, MlServiceProperties props) {
-        return builder.baseUrl(props.baseUrl()).build();
+    public WebClient mlServiceWebClient(MlServiceProperties props) {
+        return WebClient.builder().baseUrl(props.baseUrl()).build();
     }
 
     /**
