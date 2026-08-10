@@ -35,6 +35,13 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
+    <!-- Boot 4에서는 webflux 스타터가 jackson-databind를 더 이상 끌어오지
+         않는다. ml-service 응답 역직렬화와 Redis JSON 직렬화 양쪽이
+         필요로 하므로 명시적으로 선언한다. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-json</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-redis</artifactId>

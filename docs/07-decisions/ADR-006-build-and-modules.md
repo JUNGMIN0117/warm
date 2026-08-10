@@ -89,6 +89,12 @@ ArchUnit이 이것을 조용히 통과시키지 않고 실패로 알려준 덕�
 | `@EntityScan` | `boot.autoconfigure.domain` | `boot.persistence.autoconfigure` |
 | AOP 스타터 | `spring-boot-starter-aop` | **제거됨** |
 | Testcontainers PG | `org.testcontainers:postgresql` | `testcontainers-postgresql` |
+| **JSON** | Jackson 2 (`com.fasterxml.jackson.databind`) | **Jackson 3** (`tools.jackson.databind`) |
+| Redis JSON 직렬화기 | `Jackson2JsonRedisSerializer` | `JacksonJsonRedisSerializer` |
+
+**Jackson 3 전환이 가장 헷갈리는 항목이었습니다.** `ObjectMapper`의 패키지가 `com.fasterxml.jackson.databind`에서 `tools.jackson.databind`로 바뀌었는데, **애너테이션은 여전히 `com.fasterxml.jackson.annotation`** 입니다(jackson-annotations 2.21). 그래서 `@JsonProperty`가 붙은 클래스는 멀쩡히 컴파일되는데 `ObjectMapper`를 임포트하는 순간 "package does not exist"가 납니다. 절반만 동작하니 원인을 짚기 어렵습니다.
+
+덧붙여 Boot 4의 `spring-boot-starter-webflux`는 JSON 지원을 끌어오지 않습니다. `spring-boot-starter-json`을 따로 선언해야 합니다.
 
 가장 큰 문제는 **Resilience4j**였습니다. Spring Boot 자동설정 모듈이 `resilience4j-spring-boot3`까지만 나와 있고(2.4.0 기준) Boot 4용이 없습니다. 게다가 그 스타터는 `@CircuitBreaker` 애너테이션 처리를 위해 `spring-boot-starter-aop`에 의존하는데, 그 스타터가 Boot 4에서 사라졌습니다.
 
