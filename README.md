@@ -122,3 +122,11 @@ cd ml-service && uv sync && uv run python scripts/download_models.py
 ```bash
 cd ml-service && uv run pytest -q && uv run ruff check . && uv run mypy app/ tests/ scripts/
 ```
+
+ML 서비스를 직접 띄워 보려면:
+
+```bash
+cd ml-service && uv run uvicorn app.api.main:app --reload --port 8000
+```
+
+기동 후 **`http://127.0.0.1:8000/docs`** 에서 스키마를 보고 사진을 올려볼 수 있습니다. Windows에서 `localhost`는 IPv6(`::1`)로 먼저 해석되는데 uvicorn은 IPv4에만 바인딩하므로, 반드시 `127.0.0.1`로 접속하세요 ([05-api-spec.md §8](docs/05-api-spec.md)).
