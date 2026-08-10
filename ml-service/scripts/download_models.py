@@ -38,6 +38,23 @@ MODELS: tuple[ModelSpec, ...] = (
         sha256="64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff",
         size_bytes=3_758_596,
     ),
+    ModelSpec(
+        # 원본 프로젝트(2022)가 쓰던 Haar Cascade. 검출기 비교
+        # (scripts/compare_face_detectors.py)에만 쓰이고 서비스 경로에는
+        # 들어가지 않는다.
+        #
+        # OpenCV 5.0부터 이 XML들이 파이썬 휠에서 제거됐다 —
+        # cv2.data.haarcascades 디렉터리가 비어 있다. 그래서 업스트림
+        # 저장소의 4.10.0 태그에서 직접 받는다 (브랜치가 아니라 태그로
+        # 고정해야 재현성이 유지된다).
+        filename="haarcascade_frontalface_default.xml",
+        url=(
+            "https://raw.githubusercontent.com/opencv/opencv/4.10.0/"
+            "data/haarcascades/haarcascade_frontalface_default.xml"
+        ),
+        sha256="0f7d4527844eb514d4a4948e822da90fbb16a34a0bbbbc6adc6498747a5aafb0",
+        size_bytes=930_127,
+    ),
 )
 
 
