@@ -90,7 +90,7 @@ Java와 Python 중 하나를 고르지 않고 둘 다 쓰는 이유는 [ADR-001]
 - [x] **Step 0** — 도메인 코어: 색공간 변환 · 특징 추출 · 규칙 기반 분류기 *(34 tests)*
 - [x] **Step 1** — 전처리 파이프라인: 얼굴 검출 · 화이트밸런스 · 피부 마스킹 *(80 tests)*
 - [x] **Step 2** — FastAPI 무상태 추론 서비스: `POST /v1/analyze` · `GET /health` *(104 tests)*
-- [ ] Step 3 — Spring Boot API 게이트웨이
+- [x] **Step 3** — Spring Boot 게이트웨이: 멀티모듈 · JWT · JPA · Redis 캐시 · 서킷 브레이커 *(134 tests)*
 - [ ] Step 4 — Next.js 프론트엔드
 - [ ] Step 5 — CNN 학습 및 규칙 엔진 대비 성능 비교
 - [ ] Step 6 — Docker Compose 통합 및 배포
@@ -102,6 +102,7 @@ Java와 Python 중 하나를 고르지 않고 둘 다 쓰는 이유는 [ADR-001]
 | 문서 | 내용 |
 |---|---|
 | [00-overview.md](docs/00-overview.md) | 원본 프로젝트 분석과 재구축 목표 |
+| [01-architecture.md](docs/01-architecture.md) | 시스템 구조 — 경계·계층·데이터·오류 흐름 |
 | [03-color-theory.md](docs/03-color-theory.md) | 색채 이론 및 분류 알고리즘 |
 | [04-preprocessing.md](docs/04-preprocessing.md) | 전처리 파이프라인 — 화이트밸런스·검출·마스킹 |
 | [05-api-spec.md](docs/05-api-spec.md) | ML 서비스 HTTP 계약과 그 설계 근거 |

@@ -1,0 +1,22 @@
+# 테스트 전용 설정.
+#
+# 운영 application.yml은 jwt.secret을 ${PCAI_JWT_SECRET}으로 두고 기본값을
+# 주지 않는다(의도적). 테스트에서는 환경변수를 요구할 수 없으므로 여기서
+# 고정값을 준다 — 이 값은 테스트 컨텍스트에서만 쓰이고 배포물에 들어가지 않는다.
+jwt:
+  secret: integration-test-secret-key-long-enough-for-hs256
+  access-token-ttl: 12h
+  issuer: personal-color-ai
+
+# 컨테이너가 없는 테스트(웹 슬라이스 등)가 DB 연결을 시도하다 실패하지
+# 않도록 Flyway는 꺼둔다. Testcontainers를 쓰는 테스트는 각자 다시 켠다.
+spring:
+  flyway:
+    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: none
+
+logging:
+  level:
+    org.springframework.test: WARN

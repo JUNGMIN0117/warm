@@ -85,13 +85,18 @@ FastAPI는 **완전 무상태**를 유지한다. DB·인증·세션 금지. 입�
   - **응답 경계**: 측정·판정은 Python이, 팔레트·라벨·스타일링 팁은 Spring(DB)이 소유. 근거: ADR-005
   - 동기 엔드포인트 + `DetectorPool` (MediaPipe는 스레드 안전이 아님)
   - `create_app(state_builder=...)` 주입 지점으로 HTTP 계층을 모델 없이 테스트
-- [ ] **Step 3** — Spring Boot 게이트웨이 (`backend/`) — 진행 중
-  - [x] Maven 멀티모듈 골격 + ArchUnit 계층 검증 (ADR-006)
-  - [ ] 도메인 모델·포트, ml-service 클라이언트(WebClient + Resilience4j 코어 + Redis 캐시)
-  - [ ] JPA 영속화 + Flyway, 팔레트 시드(`export_palettes.py` 산출물)
-  - [ ] REST API + JWT — **익명 분석 허용**, 이력 조회만 인증
-  - **원본 이미지는 저장하지 않는다.** 해시(캐시 키)·측정 수치·대표 피부색만 남긴다
-  - Redis 캐시 키에 `include_stages`를 포함할 것 (05-api-spec §9의 지적)
+- [x] **Step 3** — Spring Boot 게이트웨이 (`backend/`)
+  - Maven 멀티모듈(domain/infrastructure/api) + ArchUnit 계층 검증 (ADR-006)
+  - ml-service 클라이언트: `Caching → CircuitBreaking → WebClient` 데코레이터 3겹.
+    **순서 중요** — 캐시가 바깥이어야 장애 중에도 아는 답을 서빙한다
+  - **서킷 브레이커는 `ImageRejectedException`을 실패로 세지 않는다.** 얼굴 없는
+    사진은 정상 동작의 결과이지 장애가 아니다
+  - JPA + Flyway 3단계, 팔레트 시드는 `export_palettes.py --format sql` 산출물
+  - **익명 분석 허용.** JWT 필터는 토큰이 없거나 잘못돼도 거절하지 않는다 —
+    거절하면 익명 흐름이 막힌다. 응답의 `saved`로 저장 여부를 알린다
+  - **원본 이미지는 저장하지 않는다.** 해시·측정 수치·대표 피부색만.
+    스키마에 컬럼 자체가 없고 테스트가 그것을 지킨다
+  - JWT 서명 키에 기본값 없음 — 없으면 기동 실패 (`PCAI_JWT_SECRET`)
 - [ ] **Step 4** — Next.js 프론트 (업로드/웹캠 → 전처리 단계 시각화 → 결과 카드 + 3축 게이지 + 팔레트)
 - [ ] **Step 5** — CNN 학습(pseudo-label) + 규칙 엔진 대비 평가 + Grad-CAM으로 P2 검증
 - [ ] **Step 6** — Docker Compose 통합, CI, 배포
@@ -113,11 +118,11 @@ FastAPI는 **완전 무상태**를 유지한다. DB·인증·세션 금지. 입�
 ```
 docs/
  ├ 00-overview.md        원본 분석 + 재구축 목표 (완료)
- ├ 01-architecture.md    시스템 구조 (Step 3 시점에 작성)
+ ├ 01-architecture.md    시스템 구조 (완료 — 경계·계층·데이터·오류 흐름)
  ├ 02-data-pipeline.md   데이터 수집·라벨링 (Step 5)
  ├ 03-color-theory.md    색채 이론·분류 알고리즘 (완료 — 도메인 변경 시 함께 갱신)
  ├ 04-preprocessing.md   마스킹 파이프라인 (완료 — 파이프라인 변경 시 함께 갱신)
- ├ 05-api-spec.md        엔드포인트 명세 (ML 서비스 완료 — Spring 추가 시 갱신)
+ ├ 05-api-spec.md        엔드포인트 명세 (완료 — ML 서비스 + Spring 게이트웨이)
  ├ 06-frontend.md        UX 설계 의도 (Step 4)
  ├ 07-decisions/         ADR (완료: 001 스택, 002 데이터, 003 분류범위,
  │                            004 파이프라인 순서, 005 서비스 경계,
