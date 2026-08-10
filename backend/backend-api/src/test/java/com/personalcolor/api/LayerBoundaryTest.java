@@ -69,13 +69,15 @@ class LayerBoundaryTest {
     @Test
     @DisplayName("컨트롤러는 리포지토리를 직접 호출하지 않는다")
     void controllersDoNotTouchRepositories() {
-        // allowEmptyShould: 아직 컨트롤러가 없다. 클래스 docstring 참조.
+        // allowEmptyShould를 걷어냈다 — 이제 컨트롤러가 존재하므로 규칙이
+        // 실제로 무언가를 검사한다. 그리고 실제로 잡았다: 초안의 컨트롤러 둘이
+        // SeasonProfileRepository를 직접 주입받고 있었고, 규칙을 푸는 대신
+        // BrowseSeasonCatalog 유스케이스를 만들어 고쳤다.
         ArchRule rule = noClasses()
                 .that().haveSimpleNameEndingWith("Controller")
                 .should().dependOnClassesThat().haveSimpleNameEndingWith("Repository")
                 .because("트랜잭션 경계와 도메인 규칙을 건너뛰게 된다 — "
-                        + "서비스를 거쳐야 한다")
-                .allowEmptyShould(true);
+                        + "유스케이스를 거쳐야 한다");
 
         rule.check(classes);
     }
