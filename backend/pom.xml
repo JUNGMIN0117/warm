@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  부모 POM — 버전과 공통 설정만 소유하고 코드는 갖지 않는다 (packaging=pom).
+
+  모듈을 셋으로 나눈 이유는 의존성 방향을 "약속"이 아니라 "빌드 실패"로
+  강제하기 위해서다. backend-domain은 Spring도 JPA도 의존하지 않으므로,
+  누군가 도메인에 @Entity를 붙이려 하면 컴파일이 깨진다. 이것은
+  ml-service의 app/domain이 cv2·fastapi를 임포트하지 않는 규칙과
+  같은 원칙이며, 그쪽은 규율로 지키고 이쪽은 빌드 도구가 지킨다.
+
+  의존 방향:  api  ──▶  infrastructure  ──▶  domain
+               └────────────────────────────▶ domain
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>4.1.0</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>com.personalcolor</groupId>
+  <artifactId>backend</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>personal-color-backend</name>
+  <description>퍼스널 컬러 분석 API 게이트웨이</description>
+
+  <modules>
+    <module>backend-domain</module>
+    <module>backend-infrastructure</module>
+    <module>backend-api</module>
+  </modules>
+
+  <properties>
+    <java.version>21</java.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <archunit.version>1.4.1</archunit.version>
+    <resilience4j.version>2.4.0</resilience4j.version>
+    <jjwt.version>0.12.6</jjwt.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- 모듈 간 의존은 부모가 버전을 관리한다. 각 모듈 POM에서
+           version을 반복하지 않기 위한 것으로, Maven 멀티모듈의 표준 관행이다. -->
+      <dependency>
+        <groupId>com.personalcolor</groupId>
+        <artifactId>backend-domain</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.personalcolor</groupId>
+        <artifactId>backend-infrastructure</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <!--
+        Resilience4j는 Spring Boot 스타터가 아니라 **코어 모듈**을 쓴다.
+
+        이유는 선택이 아니라 제약이다. resilience4j의 Spring Boot
+        자동설정은 아직 spring-boot3 세대까지만 나와 있고(2.4.0 기준),
+        Spring Boot 4에서 동작을 보장할 수 없다. 게다가 그 스타터는
+        @CircuitBreaker 애너테이션 처리를 위해 spring-boot-starter-aop에
+        의존하는데, 그 스타터 자체가 Boot 4에서 제거됐다.
+
+        코어 모듈은 프레임워크에 의존하지 않는 순수 자바라 이 문제가 없다.
+        서킷 브레이커를 @Configuration에서 직접 배선하고 호출부를
+        데코레이트한다 — 애너테이션이 대신 해주던 일을 눈에 보이게 쓰는
+        셈이고, 스프링 컨텍스트 없이 테스트할 수 있다는 이점도 따라온다.
+      -->
+      <dependency>
+        <groupId>io.github.resilience4j</groupId>
+        <artifactId>resilience4j-circuitbreaker</artifactId>
+        <version>${resilience4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.resilience4j</groupId>
+        <artifactId>resilience4j-timelimiter</artifactId>
+        <version>${resilience4j.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.tngtech.archunit</groupId>
+        <artifactId>archunit-junit5</artifactId>
+        <version>${archunit.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-api</artifactId>
+        <version>${jjwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-impl</artifactId>
+        <version>${jjwt.version}</version>
+        <scope>runtime</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-jackson</artifactId>
+        <version>${jjwt.version}</version>
+        <scope>runtime</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!-- 모든 모듈이 JUnit 5 + AssertJ를 쓴다. Spring Boot 4는 테스트
+         스타터를 기능별로 쪼갰지만, 이 코어는 어디서나 필요하다. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+            <compilerArgs>
+              <!-- record의 생성자 파라미터명을 런타임에 보존한다.
+                   Jackson 역직렬화가 이 이름에 의존한다. -->
+              <arg>-parameters</arg>
+              <arg>-Xlint:all</arg>
+            </compilerArgs>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <configuration>
+            <!-- 포크된 테스트 JVM의 인코딩을 UTF-8로 고정한다.
+                 이 프로젝트는 테스트 이름과 assertion 메시지가 한국어인데,
+                 Windows 기본 콘솔 인코딩(MS949)으로 리포트가 쓰이면
+                 CI 로그에서 깨져 읽을 수 없다 — 실패 원인을 설명하라고
+                 쓴 메시지가 정작 실패했을 때 못 읽히는 상황이 된다. -->
+            <argLine>-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8</argLine>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+</project>

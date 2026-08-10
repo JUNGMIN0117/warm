@@ -21,9 +21,12 @@ models/
 haarcascade_*.xml
 
 # Java
+target/
 build/
 .gradle/
 *.class
+# Maven Wrapper가 내려받는 배포판 (mvnw가 필요할 때 다시 받는다)
+.mvn/wrapper/maven-wrapper.jar
 
 # Node
 node_modules/
