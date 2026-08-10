@@ -26,6 +26,7 @@ from .pipeline import (
     PipelineStages,
     PreprocessPipeline,
     decode_image,
+    downscale_to_fit,
 )
 from .skin_mask import MaskConfig, SkinMask, build_skin_mask, extract_skin_pixels
 from .white_balance import WhiteBalanceMethod, WhiteBalanceResult, apply_white_balance
@@ -50,5 +51,6 @@ __all__ = [
     "apply_white_balance",
     "build_skin_mask",
     "decode_image",
+    "downscale_to_fit",
     "extract_skin_pixels",
 ]

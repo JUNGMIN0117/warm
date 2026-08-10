@@ -22,6 +22,7 @@ from app.pipeline import (
     PipelineResult,
     PreprocessPipeline,
     decode_image,
+    downscale_to_fit,
 )
 from app.pipeline.face_detector import DetectedFace, _bounding_box_of
 from tests.synthetic import HEIGHT, SKIN, WIDTH, fake_landmarks, synthetic_face
@@ -34,16 +35,28 @@ def _to_png_bytes(image: NDArray[np.uint8]) -> bytes:
 
 
 class StubDetector:
-    """항상 같은 랜드마크를 돌려주는 가짜 검출기."""
+    """고정된 얼굴 배치를 돌려주는 가짜 검출기.
 
-    def __init__(self, landmarks: NDArray[np.float64]) -> None:
-        self._landmarks = landmarks
+    좌표를 상대 비율로 저장했다가 받은 이미지 크기에 맞춰 확대·축소한다.
+    실제 검출기가 그렇게 동작하기 때문이다 — 이 스텁이 이미지 크기와
+    무관하게 절대 좌표를 반환하면, 파이프라인이 입력을 축소하는 순간
+    랜드마크와 이미지가 어긋나 테스트가 현실을 반영하지 못한다.
+    """
+
+    def __init__(
+        self,
+        landmarks: NDArray[np.float64],
+        reference_size: tuple[int, int] = (WIDTH, HEIGHT),
+    ) -> None:
+        ref_w, ref_h = reference_size
+        self._normalized = landmarks / np.array([ref_w, ref_h], dtype=np.float64)
 
     def detect(self, image_rgb: NDArray[np.uint8]) -> DetectedFace:
         height, width = image_rgb.shape[:2]
+        landmarks = self._normalized * np.array([width, height], dtype=np.float64)
         return DetectedFace(
-            landmarks=self._landmarks,
-            bounding_box=_bounding_box_of(self._landmarks, width, height),
+            landmarks=landmarks,
+            bounding_box=_bounding_box_of(landmarks, width, height),
             image_size=(width, height),
         )
 
@@ -92,6 +105,50 @@ class TestDecodeImage:
         decoded = decode_image(buffer.getvalue())
 
         assert decoded.shape[:2] == (100, 50)  # 가로세로가 바뀌어야 함
+
+
+class TestDownscale:
+    def test_small_image_is_returned_unchanged(self) -> None:
+        image = synthetic_face()
+        assert downscale_to_fit(image, 1_600) is image
+
+    def test_long_edge_is_capped_and_ratio_preserved(self) -> None:
+        tall = np.zeros((1000, 400, 3), dtype=np.uint8)
+
+        result = downscale_to_fit(tall, 500)
+
+        assert result.shape[:2] == (500, 200)
+        assert result.dtype == np.uint8
+
+    def test_color_statistics_survive_downscaling(self) -> None:
+        """축소가 색 통계를 흔들면 안 된다 — 우리는 색을 재는 파이프라인이다.
+
+        INTER_AREA(면적 평균)를 쓰는 이유에 대한 회귀 테스트다. 보간
+        방식을 INTER_LINEAR 등으로 바꾸면 큰 배율에서 에일리어싱이 생겨
+        이 허용 오차를 넘긴다.
+        """
+        big = np.repeat(np.repeat(synthetic_face(), 4, axis=0), 4, axis=1)
+
+        shrunk = downscale_to_fit(big, 320)
+
+        np.testing.assert_allclose(
+            np.median(shrunk.reshape(-1, 3), axis=0),
+            np.median(synthetic_face().reshape(-1, 3), axis=0),
+            atol=2.0,
+        )
+
+    def test_large_input_is_downscaled_by_pipeline(self) -> None:
+        """큰 사진이 들어와도 설정한 한도 안에서 처리되어야 한다."""
+        big = np.repeat(np.repeat(_neutral_face(), 3, axis=0), 3, axis=1)
+        pipeline = PreprocessPipeline(
+            detector=StubDetector(fake_landmarks()),
+            config=PipelineConfig(max_input_edge=400),
+        )
+
+        result = pipeline.run(_to_png_bytes(big))
+
+        assert max(result.stages.original.shape[:2]) == 400
+        assert result.stages.skin_mask.shape == result.stages.original.shape[:2]
 
 
 class TestPipelineRun:

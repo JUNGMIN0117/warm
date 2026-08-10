@@ -12,6 +12,11 @@ dependencies = [
     # 이미지 디코딩은 cv2.imdecode가 아니라 Pillow를 쓴다 — cv2는 EXIF
     # Orientation을 무시해서 폰 세로 사진이 눕는다 (pipeline.py 참조).
     "pillow>=11.0",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic-settings>=2.6",
+    # multipart/form-data 업로드 파싱. FastAPI의 UploadFile이 요구한다.
+    "python-multipart>=0.0.20",
 ]
 
 # PEP 735 dependency-groups — 배포 대상이 아닌 개발 도구는 optional-dependencies가 아니라
@@ -22,6 +27,9 @@ dev = [
     "pytest-cov>=5.0",
     "ruff>=0.6",
     "mypy>=1.11",
+    # starlette TestClient의 HTTP 백엔드. 최신 starlette은 httpx2를 요구하고
+    # httpx 1.x를 쓰면 DeprecationWarning을 낸다.
+    "httpx2>=0.29",
 ]
 
 [tool.pytest.ini_options]

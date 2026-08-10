@@ -33,6 +33,7 @@ import io
 from dataclasses import dataclass, field
 from typing import Protocol
 
+import cv2
 import numpy as np
 from numpy.typing import NDArray
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -72,6 +73,14 @@ class PipelineConfig:
 
     crop_margin_ratio: float = 0.12
     """시각화용 얼굴 crop에 두는 여유. 턱·이마가 잘려 보이지 않을 정도."""
+
+    max_input_edge: int = 1_600
+    """입력 이미지의 최대 변 길이. 넘으면 축소한 뒤 파이프라인을 태운다.
+
+    속도만의 문제가 아니다. 4000px 사진은 피부 픽셀이 수백만 개인데
+    중앙값 통계는 수만 개면 이미 수렴하므로 나머지는 순수한 비용이다.
+    면적 평균(INTER_AREA)으로 줄이므로 색 통계는 거의 보존된다.
+    """
 
 
 @dataclass(frozen=True, slots=True)
@@ -143,6 +152,27 @@ def decode_image(image_bytes: bytes) -> NDArray[np.uint8]:
         ) from exc
 
 
+def downscale_to_fit(
+    image: NDArray[np.uint8], max_edge: int
+) -> NDArray[np.uint8]:
+    """긴 변이 max_edge를 넘으면 비율을 유지한 채 축소한다.
+
+    INTER_AREA를 쓰는 이유: 축소에서 이것만이 원본 픽셀의 면적 평균을
+    낸다. INTER_LINEAR 같은 보간은 원본 픽셀을 '샘플링'하므로 축소
+    배율이 크면 에일리어싱이 생기고, 그 결과 색 통계가 흔들린다.
+    우리는 색을 재는 파이프라인이므로 이 차이가 중요하다.
+    """
+    height, width = image.shape[:2]
+    longest = max(height, width)
+    if longest <= max_edge:
+        return image
+
+    scale = max_edge / longest
+    target = (max(1, round(width * scale)), max(1, round(height * scale)))
+    resized = cv2.resize(image, target, interpolation=cv2.INTER_AREA)
+    return np.asarray(resized, dtype=np.uint8)
+
+
 def _expand_box(
     box: tuple[int, int, int, int],
     margin_ratio: float,
@@ -181,7 +211,9 @@ class PreprocessPipeline:
         """
         cfg = self._config
 
-        original = decode_image(image_bytes)
+        # 축소는 검출보다 먼저 한다. 이후 모든 좌표(랜드마크·박스·마스크)가
+        # 같은 좌표계 위에 있어야 시각화 단계에서 재변환이 필요 없다.
+        original = downscale_to_fit(decode_image(image_bytes), cfg.max_input_edge)
         height, width = original.shape[:2]
 
         # ① 검출 — 보정 전 이미지에서. 랜드마크는 기하 정보라 캐스트에 둔감하다.
