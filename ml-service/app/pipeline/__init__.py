@@ -13,12 +13,20 @@
 
 from .errors import (
     ImageDecodeError,
+    InsufficientSkinPixelsError,
     ModelNotFoundError,
     MultipleFacesError,
     NoFaceDetectedError,
     PipelineError,
 )
 from .face_detector import DetectedFace, FaceDetector
+from .pipeline import (
+    PipelineConfig,
+    PipelineResult,
+    PipelineStages,
+    PreprocessPipeline,
+    decode_image,
+)
 from .skin_mask import MaskConfig, SkinMask, build_skin_mask, extract_skin_pixels
 from .white_balance import WhiteBalanceMethod, WhiteBalanceResult, apply_white_balance
 
@@ -26,15 +34,21 @@ __all__ = [
     "DetectedFace",
     "FaceDetector",
     "ImageDecodeError",
+    "InsufficientSkinPixelsError",
     "MaskConfig",
     "ModelNotFoundError",
     "MultipleFacesError",
     "NoFaceDetectedError",
+    "PipelineConfig",
     "PipelineError",
+    "PipelineResult",
+    "PipelineStages",
+    "PreprocessPipeline",
     "SkinMask",
     "WhiteBalanceMethod",
     "WhiteBalanceResult",
     "apply_white_balance",
     "build_skin_mask",
+    "decode_image",
     "extract_skin_pixels",
 ]

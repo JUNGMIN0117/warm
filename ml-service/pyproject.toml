@@ -9,6 +9,9 @@ dependencies = [
     # 두 flavor(cv2 제공 패키지)가 공존하면 임포트가 깨지기 때문에 flavor를 통일해야 한다.
     "opencv-contrib-python>=4.10",
     "mediapipe>=1.0",
+    # 이미지 디코딩은 cv2.imdecode가 아니라 Pillow를 쓴다 — cv2는 EXIF
+    # Orientation을 무시해서 폰 세로 사진이 눕는다 (pipeline.py 참조).
+    "pillow>=11.0",
 ]
 
 # PEP 735 dependency-groups — 배포 대상이 아닌 개발 도구는 optional-dependencies가 아니라

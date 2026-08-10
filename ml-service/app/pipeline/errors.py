@@ -50,6 +50,23 @@ class MultipleFacesError(PipelineError):
         )
 
 
+class InsufficientSkinPixelsError(PipelineError):
+    """마스킹은 성공했지만 남은 피부 픽셀이 통계적 최소치 미만.
+
+    도메인의 min_reliable_pixels(2,000)는 신뢰도를 '감쇠'시키는 소프트
+    기준이고, 이것은 중앙값 통계 자체가 무의미해지는 하드 플로어다.
+    극단적 저해상도, 대부분이 가려진 얼굴, 마스킹 실패가 여기 걸린다.
+    """
+
+    def __init__(self, pixel_count: int, minimum: int) -> None:
+        self.pixel_count = pixel_count
+        self.minimum = minimum
+        super().__init__(
+            f"피부 픽셀이 {pixel_count}개뿐입니다(최소 {minimum}개). "
+            "얼굴이 더 크고 선명하게 나온 사진을 사용해 주세요."
+        )
+
+
 class ModelNotFoundError(PipelineError):
     """모델 가중치 파일이 없음 — 배포/환경 구성 문제.
 
