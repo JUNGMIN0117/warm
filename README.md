@@ -88,8 +88,8 @@ Java와 Python 중 하나를 고르지 않고 둘 다 쓰는 이유는 [ADR-001]
 ## 진행 상황
 
 - [x] **Step 0** — 도메인 코어: 색공간 변환 · 특징 추출 · 규칙 기반 분류기 *(34 tests)*
-- [x] **Step 1** — 전처리 파이프라인: 얼굴 검출 · 화이트밸런스 · 피부 마스킹 *(80 tests, 2초)*
-- [ ] Step 2 — FastAPI 추론 서비스
+- [x] **Step 1** — 전처리 파이프라인: 얼굴 검출 · 화이트밸런스 · 피부 마스킹 *(80 tests)*
+- [x] **Step 2** — FastAPI 무상태 추론 서비스: `POST /v1/analyze` · `GET /health` *(104 tests)*
 - [ ] Step 3 — Spring Boot API 게이트웨이
 - [ ] Step 4 — Next.js 프론트엔드
 - [ ] Step 5 — CNN 학습 및 규칙 엔진 대비 성능 비교
@@ -104,6 +104,7 @@ Java와 Python 중 하나를 고르지 않고 둘 다 쓰는 이유는 [ADR-001]
 | [00-overview.md](docs/00-overview.md) | 원본 프로젝트 분석과 재구축 목표 |
 | [03-color-theory.md](docs/03-color-theory.md) | 색채 이론 및 분류 알고리즘 |
 | [04-preprocessing.md](docs/04-preprocessing.md) | 전처리 파이프라인 — 화이트밸런스·검출·마스킹 |
+| [05-api-spec.md](docs/05-api-spec.md) | ML 서비스 HTTP 계약과 그 설계 근거 |
 | [07-decisions/](docs/07-decisions/) | ADR — 주요 기술 결정의 근거 |
 
 ---

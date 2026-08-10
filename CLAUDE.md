@@ -75,7 +75,11 @@ FastAPI는 **완전 무상태**를 유지한다. DB·인증·세션 금지. 입�
   - 최종 순서: 얼굴 검출 → 화이트밸런스(얼굴 제외 배경으로 조명 추정) → 랜드마크로 눈·눈썹·입술 폴리곤 제외 → YCrCb inRange ∧ Otsu(원본 방식 계승) → 피부 픽셀 배열
   - **초안의 "WB 먼저" 순서를 뒤집었다** — 전체 프레임 Gray-World가 피부의 웜기를 조명으로 오인해 제거하고, 훼손 정도가 얼굴의 프레임 점유율에 비례한다(P1과 같은 성질의 새 편향). 근거: ADR-004
   - 중간 단계 이미지는 `PipelineStages`로 구조화해 반환 — 프론트 "파이프라인 시각화" UI가 소비한다
-- [ ] **Step 2** — FastAPI 추론 서비스 (`POST /analyze`, `/health`, OpenAPI 스키마 고정)
+- [x] **Step 2** — FastAPI 무상태 추론 서비스 (`ml-service/app/api/`)
+  - `POST /v1/analyze` (multipart, `?include_stages`), `GET /health`, OpenAPI 자동 노출
+  - **응답 경계**: 측정·판정은 Python이, 팔레트·라벨·스타일링 팁은 Spring(DB)이 소유. 근거: ADR-005
+  - 동기 엔드포인트 + `DetectorPool` (MediaPipe는 스레드 안전이 아님)
+  - `create_app(state_builder=...)` 주입 지점으로 HTTP 계층을 모델 없이 테스트
 - [ ] **Step 3** — Spring Boot 게이트웨이 (업로드 → WebClient로 ml-service 호출 → 결과 저장/조회, JWT 인증, Redis 캐시, Resilience4j)
 - [ ] **Step 4** — Next.js 프론트 (업로드/웹캠 → 전처리 단계 시각화 → 결과 카드 + 3축 게이지 + 팔레트)
 - [ ] **Step 5** — CNN 학습(pseudo-label) + 규칙 엔진 대비 평가 + Grad-CAM으로 P2 검증
@@ -102,9 +106,10 @@ docs/
  ├ 02-data-pipeline.md   데이터 수집·라벨링 (Step 5)
  ├ 03-color-theory.md    색채 이론·분류 알고리즘 (완료 — 도메인 변경 시 함께 갱신)
  ├ 04-preprocessing.md   마스킹 파이프라인 (완료 — 파이프라인 변경 시 함께 갱신)
- ├ 05-api-spec.md        엔드포인트 명세 (Step 2~3)
+ ├ 05-api-spec.md        엔드포인트 명세 (ML 서비스 완료 — Spring 추가 시 갱신)
  ├ 06-frontend.md        UX 설계 의도 (Step 4)
- ├ 07-decisions/         ADR (완료: 001 스택, 002 데이터, 003 분류범위, 004 파이프라인 순서)
+ ├ 07-decisions/         ADR (완료: 001 스택, 002 데이터, 003 분류범위,
+ │                            004 파이프라인 순서, 005 서비스 경계)
  └ 08-retrospective.md   원본 대비 개선점 (Step 6)
 ```
 
