@@ -19,11 +19,11 @@ import java.util.Map;
  * 보이지 않는다. test-jar를 만들어 공유할 수도 있지만, 모듈 간 테스트
  * 결합을 만들 만큼 큰 값이 아니라 필요한 최소한만 다시 둔다.
  */
-final class Measurements {
+public final class Measurements {
 
     private Measurements() {}
 
-    static Measurement autumnWarm() {
+    public static Measurement autumnWarm() {
         Map<Season, Double> probabilities = new EnumMap<>(Season.class);
         probabilities.put(Season.SPRING_WARM, 0.132);
         probabilities.put(Season.SUMMER_COOL, 0.004);
