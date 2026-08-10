@@ -71,9 +71,10 @@ FastAPI는 **완전 무상태**를 유지한다. DB·인증·세션 금지. 입�
 ## 로드맵
 
 - [x] **Step 0** — 도메인 코어 (색공간·특징추출·규칙 분류기)
-- [ ] **Step 1** — 얼굴 검출 + 피부 마스킹 파이프라인 (`ml-service/app/pipeline/`)
-  - 화이트밸런스 정규화(Gray-World 기본, Retinex 비교) → 얼굴 검출 → 랜드마크로 눈·눈썹·입술 폴리곤 제외 → YCrCb inRange + Otsu의 `bitwise_and`(원본 방식 계승) → 피부 픽셀 배열
-  - **중간 단계 이미지를 구조화해 반환**할 것 — 프론트의 "파이프라인 시각화" UI가 이걸 소비한다
+- [x] **Step 1** — 얼굴 검출 + 피부 마스킹 파이프라인 (`ml-service/app/pipeline/`)
+  - 최종 순서: 얼굴 검출 → 화이트밸런스(얼굴 제외 배경으로 조명 추정) → 랜드마크로 눈·눈썹·입술 폴리곤 제외 → YCrCb inRange ∧ Otsu(원본 방식 계승) → 피부 픽셀 배열
+  - **초안의 "WB 먼저" 순서를 뒤집었다** — 전체 프레임 Gray-World가 피부의 웜기를 조명으로 오인해 제거하고, 훼손 정도가 얼굴의 프레임 점유율에 비례한다(P1과 같은 성질의 새 편향). 근거: ADR-004
+  - 중간 단계 이미지는 `PipelineStages`로 구조화해 반환 — 프론트 "파이프라인 시각화" UI가 소비한다
 - [ ] **Step 2** — FastAPI 추론 서비스 (`POST /analyze`, `/health`, OpenAPI 스키마 고정)
 - [ ] **Step 3** — Spring Boot 게이트웨이 (업로드 → WebClient로 ml-service 호출 → 결과 저장/조회, JWT 인증, Redis 캐시, Resilience4j)
 - [ ] **Step 4** — Next.js 프론트 (업로드/웹캠 → 전처리 단계 시각화 → 결과 카드 + 3축 게이지 + 팔레트)
@@ -100,10 +101,10 @@ docs/
  ├ 01-architecture.md    시스템 구조 (Step 3 시점에 작성)
  ├ 02-data-pipeline.md   데이터 수집·라벨링 (Step 5)
  ├ 03-color-theory.md    색채 이론·분류 알고리즘 (완료 — 도메인 변경 시 함께 갱신)
- ├ 04-preprocessing.md   마스킹 파이프라인 (Step 1에서 작성)
+ ├ 04-preprocessing.md   마스킹 파이프라인 (완료 — 파이프라인 변경 시 함께 갱신)
  ├ 05-api-spec.md        엔드포인트 명세 (Step 2~3)
  ├ 06-frontend.md        UX 설계 의도 (Step 4)
- ├ 07-decisions/         ADR (완료: 001 스택, 002 데이터, 003 분류범위)
+ ├ 07-decisions/         ADR (완료: 001 스택, 002 데이터, 003 분류범위, 004 파이프라인 순서)
  └ 08-retrospective.md   원본 대비 개선점 (Step 6)
 ```
 
@@ -128,7 +129,15 @@ docs/
 
 ## 검증 명령
 
+의존성은 uv로 관리한다. 모델 가중치는 커밋되지 않으므로 새 환경에서는 먼저 받아야 한다.
+
 ```bash
-cd ml-service && python -m pytest tests/ -q        # 34 passed 여야 정상
-cd ml-service && ruff check . && mypy app/          # 린트·타입
+cd ml-service && uv sync && uv run python scripts/download_models.py
 ```
+
+```bash
+cd ml-service && uv run pytest -q                                  # 80 passed 여야 정상
+cd ml-service && uv run ruff check . && uv run mypy app/ tests/ scripts/
+```
+
+모델 파일이 없으면 MediaPipe 실추론 테스트는 skip되고 나머지는 통과한다 — CI에서 모델 없이도 대부분의 회귀를 잡을 수 있게 의도한 설계다.

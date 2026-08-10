@@ -17,7 +17,7 @@
 |---|---|---|
 | **분류** | 웜/쿨 2분류 | 4계절 (봄웜·여름쿨·가을웜·겨울쿨) |
 | **얼굴 검출** | Haar Cascade | MediaPipe Face Landmarker (478 랜드마크) |
-| **조도 보정** | 없음 | Gray-World / Retinex 화이트밸런스 |
+| **조도 보정** | 없음 | Gray-World 화이트밸런스 (배경 기반 조명 추정) |
 | **판정 근거** | 없음 (CNN 블랙박스) | CIELab 3축 수치 + Grad-CAM |
 | **기준선** | 없음 | 색채학 규칙 엔진 (학습 데이터 0건으로 동작) |
 | **신뢰도** | 없음 | 확률 분포 + 입력 품질 계수 |
@@ -87,8 +87,8 @@ Java와 Python 중 하나를 고르지 않고 둘 다 쓰는 이유는 [ADR-001]
 
 ## 진행 상황
 
-- [x] **Step 0** — 도메인 코어: 색공간 변환 · 특징 추출 · 규칙 기반 분류기 *(34 tests passing)*
-- [ ] Step 1 — 얼굴 검출 및 피부 마스킹 파이프라인
+- [x] **Step 0** — 도메인 코어: 색공간 변환 · 특징 추출 · 규칙 기반 분류기 *(34 tests)*
+- [x] **Step 1** — 전처리 파이프라인: 얼굴 검출 · 화이트밸런스 · 피부 마스킹 *(80 tests, 2초)*
 - [ ] Step 2 — FastAPI 추론 서비스
 - [ ] Step 3 — Spring Boot API 게이트웨이
 - [ ] Step 4 — Next.js 프론트엔드
@@ -102,6 +102,22 @@ Java와 Python 중 하나를 고르지 않고 둘 다 쓰는 이유는 [ADR-001]
 | 문서 | 내용 |
 |---|---|
 | [00-overview.md](docs/00-overview.md) | 원본 프로젝트 분석과 재구축 목표 |
-| [01-architecture.md](docs/01-architecture.md) | 시스템 구조와 계층 경계 |
 | [03-color-theory.md](docs/03-color-theory.md) | 색채 이론 및 분류 알고리즘 |
+| [04-preprocessing.md](docs/04-preprocessing.md) | 전처리 파이프라인 — 화이트밸런스·검출·마스킹 |
 | [07-decisions/](docs/07-decisions/) | ADR — 주요 기술 결정의 근거 |
+
+---
+
+## 개발 환경
+
+Python 의존성은 [uv](https://docs.astral.sh/uv/)로 관리합니다. 락파일이 커밋되어 있어 재현 가능합니다.
+
+```bash
+cd ml-service && uv sync && uv run python scripts/download_models.py
+```
+
+모델 가중치(MediaPipe Face Landmarker, 비교용 Haar cascade)는 저장소에 커밋하지 않고 위 스크립트가 버전 고정 URL과 SHA-256 검증으로 내려받습니다.
+
+```bash
+cd ml-service && uv run pytest -q && uv run ruff check . && uv run mypy app/ tests/ scripts/
+```
