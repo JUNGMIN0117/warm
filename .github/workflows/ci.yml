@@ -59,6 +59,43 @@ jobs:
         # 외부 의존을 CI에서 없애려는 의도다.
         run: uv run pytest -q
 
+  web:
+    name: 프론트엔드 (Node)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: pnpm 설치
+        # 버전을 여기 적지 않는다 — package.json의 packageManager 필드가
+        # 단일 출처다. 두 군데 적으면 반드시 어긋난다.
+        uses: pnpm/action-setup@v4
+
+      - name: Node 22 설치
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: 의존성 설치
+        run: pnpm install --frozen-lockfile
+
+      - name: 린트 (ESLint)
+        run: pnpm lint
+
+      - name: 타입 검사 (tsc strict)
+        run: pnpm typecheck
+
+      - name: 테스트 (Vitest)
+        run: pnpm test
+
+      - name: 프로덕션 빌드
+        run: pnpm build
+
   backend:
     name: 백엔드 (Java)
     runs-on: ubuntu-latest
@@ -95,7 +132,7 @@ jobs:
     runs-on: ubuntu-latest
     # 두 서비스가 통과한 뒤에만 돈다. 코드가 깨진 상태의 이미지를
     # 빌드하는 것은 러너 시간 낭비다.
-    needs: [ml-service, backend]
+    needs: [ml-service, backend, web]
 
     steps:
       - uses: actions/checkout@v4
@@ -119,6 +156,14 @@ jobs:
           push: false
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
+
+      - name: web 이미지
+        uses: docker/build-push-action@v6
+        with:
+          context: ./web
+          push: false
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
 
   compose:
     name: Compose 종단 기동
@@ -158,6 +203,14 @@ jobs:
           status=$(curl -s -o /dev/null -w '%{http_code}' \
                    -F "image=@/tmp/bad.png" http://127.0.0.1:8080/api/v1/analyses)
           test "$status" = "400" || { echo "400이 아님: $status"; exit 1; }
+
+          echo "--- 프론트 기동 확인 ---"
+          curl -fsS http://127.0.0.1:3000/ | grep -q "퍼스널 컬러" \
+            || { echo "프론트 응답에 서비스명이 없음"; exit 1; }
+
+          echo "--- 프론트 → 게이트웨이 프록시 확인 ---"
+          status=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/api/v1/seasons)
+          test "$status" = "200" || { echo "프록시 경유 응답이 200이 아님: $status"; exit 1; }
 
           echo "종단 확인 통과"
 

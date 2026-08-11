@@ -2,14 +2,14 @@
 
 > 얼굴 사진 한 장으로 4계절 퍼스널 컬러를 판정하고, **왜 그렇게 판정했는지를 수치로 설명하는** 서비스
 >
-> Java 21 · Spring Boot 4.1 · Python 3.12 · FastAPI · PostgreSQL 16 · Redis · Docker
+> Java 21 · Spring Boot 4.1 · Python 3.12 · FastAPI · Next.js 15 · PostgreSQL 16 · Redis · Docker
 
 [![CI](https://github.com/JUNGMIN0117/warm/actions/workflows/ci.yml/badge.svg)](https://github.com/JUNGMIN0117/warm/actions/workflows/ci.yml)
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-6DB33F)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791)
-![Tests](https://img.shields.io/badge/tests-238%20passing-success)
+![Tests](https://img.shields.io/badge/tests-261%20passing-success)
 
 ---
 
@@ -56,7 +56,7 @@ H2를 쓰지 않습니다. 스키마가 `jsonb`·정규식 `CHECK`·함수 인�
 ```
 ┌───────────────┐       ┌──────────────────────────┐       ┌─────────────────┐
 │   Next.js 15  │──────▶│    Spring Boot 4.1       │──────▶│    FastAPI      │
-│   (Step 4)    │◀──────│    Java 21               │◀──────│   Python 3.12   │
+│   React 19    │◀──────│    Java 21               │◀──────│   Python 3.12   │
 │               │       │  인증 · 이력 · 추천 · 캐시  │       │  측정 · 판정      │
 └───────────────┘       └────────────┬─────────────┘       └─────────────────┘
                                      │                          무상태 · 결정론적
@@ -126,6 +126,20 @@ CachingAnalyzer                     캐시 히트면 아래로 내려가지 않�
 | NumPy | 2.x | 색채 통계 |
 | uv | 0.12 | 락파일 기반 재현 가능 빌드 |
 | pytest · ruff · mypy(strict) | | |
+
+### Frontend (TypeScript)
+
+| 기술 | 버전 | 선택 이유 |
+|---|---|---|
+| Next.js | 15 (App Router) | rewrites 프록시로 CORS 제거 ([ADR-007](docs/07-decisions/ADR-007-frontend-integration.md)), standalone 출력으로 경량 컨테이너 |
+| React | 19 | |
+| TypeScript | 5 (strict) | `any` 금지. 게이트웨이 DTO를 타입으로 옮겨 계약 불일치를 컴파일에서 차단 |
+| Tailwind CSS | 4 | |
+| shadcn/ui | Base UI 기반 | 소유하는 컴포넌트 코드 — 라이브러리 잠금 없이 수정 가능 |
+| TanStack Query | 5 | 서버 상태의 단일 출처. mutation 상태가 곧 화면 상태 |
+| Motion | 13 | 진행 애니메이션 · 결과 등장 연출 |
+| pnpm | 11 | 빌드 스크립트 기본 차단(공급망 방어), `packageManager`로 버전 고정 |
+| Vitest + Testing Library | | 렌더링이 아니라 계약을 고정하는 테스트 |
 
 ### Infra
 
@@ -270,7 +284,9 @@ cp .env.example .env && echo "PCAI_JWT_SECRET=$(openssl rand -base64 48)" >> .en
 docker compose up --build --wait
 ```
 
-네 서비스(PostgreSQL · Redis · ML 서비스 · 게이트웨이)가 순서대로 뜹니다. `--wait`는 모든 헬스체크가 통과할 때까지 기다립니다.
+다섯 서비스(PostgreSQL · Redis · ML 서비스 · 게이트웨이 · 프론트)가 순서대로 뜹니다. `--wait`는 모든 헬스체크가 통과할 때까지 기다립니다.
+
+**http://127.0.0.1:3000** 에서 바로 써볼 수 있습니다. API를 직접 부르려면:
 
 ```bash
 curl -F "image=@face.jpg" http://127.0.0.1:8080/api/v1/analyses
@@ -284,7 +300,8 @@ curl -F "image=@face.jpg" http://127.0.0.1:8080/api/v1/analyses
 
 | 서비스 | 호스트 | 이유 |
 |---|---|---|
-| 게이트웨이 | `8080` | 유일한 진입점 |
+| 프론트 | `3000` | 사용자 진입점. `/api/*`를 게이트웨이로 프록시 |
+| 게이트웨이 | `8080` | API 진입점 |
 | PostgreSQL | `5432` | 데이터 확인용. `.env`의 `DB_PORT`로 변경 가능 |
 | Redis | — | Compose 네트워크 내부 전용 |
 | ML 서비스 | — | **인증이 없어 외부에 열면 안 됩니다** |
@@ -330,7 +347,11 @@ cd ml-service && uv run pytest -q && uv run ruff check . && uv run mypy app/ tes
 cd backend && ./mvnw verify
 ```
 
-CI(GitHub Actions)가 푸시·PR마다 네 단계를 돕니다 — Python 검증(ruff·mypy·pytest), Java 검증(`mvnw verify`, Testcontainers 포함), 컨테이너 이미지 빌드, **Compose 종단 기동**. 마지막 단계는 네 서비스가 올바른 순서로 healthy가 되고 실제 HTTP 호출이 되는지까지 확인합니다.
+```bash
+cd web && pnpm test && pnpm lint && pnpm typecheck
+```
+
+CI(GitHub Actions)가 푸시·PR마다 네 단계를 돕니다 — 서비스별 검증 3개 병렬(Python: ruff·mypy·pytest / Java: `mvnw verify`, Testcontainers 포함 / Node: ESLint·tsc·Vitest·빌드), 컨테이너 이미지 빌드, **Compose 종단 기동**. 마지막 단계는 다섯 서비스가 올바른 순서로 healthy가 되고, 프론트를 경유한 프록시 호출까지 실제 HTTP로 확인합니다.
 
 | 층위 | 무엇이 진짜인가 | 개수 |
 |---|---|---|
@@ -340,7 +361,8 @@ CI(GitHub Actions)가 푸시·PR마다 네 단계를 돕니다 — Python 검증
 | 파이프라인·API (Python) | 합성 이미지, TestClient | 70 |
 | 영속화 통합 | **PostgreSQL 16** | 17 |
 | 종단 통합 | **PostgreSQL + Redis + 전체 컨텍스트** | 16 |
-| | **합계** | **238** |
+| 프론트 계약 (TypeScript) | jsdom — 오류 매핑 · 토큰 보관 · 확률/경계 표시 | 23 |
+| | **합계** | **261** |
 
 **실존 인물 사진이 저장소에 없습니다.** 파이프라인 테스트는 합성 얼굴(피부색 타원 + 도형)로 검증합니다. 눈과 입술을 **일부러 피부색으로 칠해** 색·밝기로는 걸러질 수 없게 만들고, 오직 랜드마크 폴리곤 제외만이 그 픽셀을 제거할 수 있음을 증명합니다.
 
@@ -358,6 +380,7 @@ Testcontainers가 Docker를 요구하므로 Docker가 꺼져 있으면 통합 �
 | [004](docs/07-decisions/ADR-004-pipeline-order.md) | **검출을 화이트밸런스보다 먼저** | 전체 프레임 Gray-World가 피부의 웜기를 조명으로 오인 (`b* 27.6 → 19.3`) |
 | [005](docs/07-decisions/ADR-005-service-boundary.md) | 측정=Python, 해석=Spring | 팔레트 변경에 추론 서버 재배포가 필요한 구조 회피 |
 | [006](docs/07-decisions/ADR-006-build-and-modules.md) | Maven · 3모듈 · Boot 4.1 | 의존 방향을 컴파일이 강제 |
+| [007](docs/07-decisions/ADR-007-frontend-integration.md) | rewrites 프록시 · localStorage 토큰 | CORS 제거, 토큰 권한 크기에 맞춘 방어 수준 |
 
 ---
 
@@ -409,6 +432,12 @@ personal-color-ai/
 │   │   └── api/                      HTTP 계층
 │   └── scripts/                      모델 다운로드 · 검출기 비교 · 팔레트 export
 │
+├── web/                              Next.js 프론트엔드
+│   └── src/
+│       ├── app/                      페이지 — 분석 · 로그인/가입 · 이력
+│       ├── components/               캡처 · 진행 애니메이션 · 결과 화면
+│       └── lib/                      API 클라이언트 · 타입 · 토큰 보관 · 훅
+│
 └── docs/                             설계 문서 + ADR
 ```
 
@@ -421,7 +450,7 @@ personal-color-ai/
 - [x] **Step 2** — FastAPI 무상태 추론 서비스
 - [x] **Step 3** — Spring Boot 게이트웨이: 멀티모듈 · JWT · JPA · Redis · 서킷 브레이커
 - [x] **Compose · CI** — 네 서비스 컨테이너화, GitHub Actions 4단계 검증 *(Step 6에서 앞당김)*
-- [ ] **Step 4** — Next.js 프론트엔드
+- [x] **Step 4** — Next.js 프론트엔드: 업로드/웹캠 · 하이브리드 파이프라인 시각화 · 3축 게이지 · 인증/이력
 - [ ] **Step 5** — CNN 학습 + 규칙 엔진 대비 평가 + Grad-CAM으로 P2 검증
 - [ ] **Step 6** — 관측성 · 배포 파이프라인 · 회고
 
@@ -437,6 +466,7 @@ personal-color-ai/
 | [03-color-theory.md](docs/03-color-theory.md) | 색채 이론과 분류 알고리즘 |
 | [04-preprocessing.md](docs/04-preprocessing.md) | 전처리 파이프라인 |
 | [05-api-spec.md](docs/05-api-spec.md) | API 명세 (게이트웨이 + ML) |
+| [06-frontend.md](docs/06-frontend.md) | 프론트엔드 UX 설계 의도 — 하이브리드 시각화 · 경계 판정 표현 |
 | [09-data-model.md](docs/09-data-model.md) | 데이터 모델 상세 — 스키마 설계 근거 |
 | [10-engineering-notes.md](docs/10-engineering-notes.md) | **개념 정리 + 면접 대비** |
 | [07-decisions/](docs/07-decisions/) | ADR 6건 |
