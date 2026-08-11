@@ -6,7 +6,7 @@
 
 ## 프로젝트 정체성
 
-**얼굴 사진 한 장으로 4계절 퍼스널 컬러(봄웜·여름쿨·가을웜·겨울쿨)를 판정하고, 판정 근거까지 수치로 보여주는 웹 서비스.**
+**얼굴 사진 한 장으로 4계절 퍼스널 컬러(봄웜·여름쿨·가을웜·겨울쿨)를 판정하고, 판정 근거까지 수치로 보여주는 웹 서비스.** 서비스명은 **사계(SAGYE)** — UI·문서의 사용자 노출 표기에 쓴다. 브랜드 색은 `web/src/app/globals.css`의 `--season-*` 변수가 단일 출처.
 
 2022년 대학 팀 프로젝트 「딥러닝에 기반한 퍼스널 컬러 분석」의 재구축이다. 원본 소스코드는 git 미사용으로 유실됐고, 결과보고서(.hwp)와 발표자료(.pptx)만 남아 그것을 근거로 다시 짓는다. 단순 복원이 아니라 원본 보고서가 스스로 지적한 한계 3가지를 해결하는 것이 목표다:
 
@@ -103,7 +103,13 @@ FastAPI는 **완전 무상태**를 유지한다. DB·인증·세션 금지. 입�
   - `depends_on: service_healthy` — `service_started`로는 Flyway가 DB보다 먼저 돈다
   - CI 4단계: Python 검증 ∥ Java 검증 → 이미지 빌드 → **Compose 종단 기동**
   - CI는 모델을 받지 않는다 (모델 없으면 102 passed / 2 skipped)
-- [ ] **Step 4** — Next.js 프론트 (업로드/웹캠 → 전처리 단계 시각화 → 결과 카드 + 3축 게이지 + 팔레트)
+- [x] **Step 4** — Next.js 프론트 (`web/`)
+  - 업로드/웹캠 → **하이브리드 시각화**(대기 중 단계 애니메이션 + 결과 아래 접이식 상세 — 사용자 확정) → 결과 카드 + 3축 게이지 + 팔레트 + 인증/이력
+  - `/api/*`는 Next rewrites로 게이트웨이 프록시 — CORS 없음. **rewrites는 빌드 타임 고정**이라 컨테이너는 `--build-arg API_PROXY_TARGET`으로 굽는다 (ADR-007)
+  - JWT는 localStorage, **클라이언트에서 디코드 금지** — 만료는 서버가 준 `expiresAt`으로만
+  - `topTwoMargin < 0.15`면 경계 판정 안내 — 표현 기준이라 프론트 소유
+  - standalone 출력은 `BUILD_STANDALONE=1`일 때만 (Windows+pnpm 심링크 EPERM)
+  - Vitest 23개 — 계약 테스트 (오류 매핑·토큰 보관·확률/경계 표시)
 - [ ] **Step 5** — CNN 학습(pseudo-label) + 규칙 엔진 대비 평가 + Grad-CAM으로 P2 검증
 - [ ] **Step 6** — 관측성(상관관계 ID·구조화 로그), 배포 파이프라인, 회고
 
@@ -152,10 +158,10 @@ docs/
  ├ 03-color-theory.md    색채 이론·분류 알고리즘 (완료 — 도메인 변경 시 함께 갱신)
  ├ 04-preprocessing.md   마스킹 파이프라인 (완료 — 파이프라인 변경 시 함께 갱신)
  ├ 05-api-spec.md        엔드포인트 명세 (완료 — ML 서비스 + Spring 게이트웨이)
- ├ 06-frontend.md        UX 설계 의도 (Step 4)
+ ├ 06-frontend.md        UX 설계 의도 (완료 — 하이브리드 시각화·프록시·토큰 결정)
  ├ 07-decisions/         ADR (완료: 001 스택, 002 데이터, 003 분류범위,
  │                            004 파이프라인 순서, 005 서비스 경계,
- │                            006 빌드·모듈·Boot 4)
+ │                            006 빌드·모듈·Boot 4, 007 프론트 통합)
  └ 08-retrospective.md   원본 대비 개선점 (Step 6)
 ```
 
@@ -197,6 +203,12 @@ cd ml-service && uv run ruff check . && uv run mypy app/ tests/ scripts/
 
 ```bash
 cd backend && ./mvnw verify                                        # 134 tests
+```
+
+프론트:
+
+```bash
+cd web && pnpm test && pnpm lint && pnpm typecheck                 # 23 tests
 ```
 
 전체 스택:

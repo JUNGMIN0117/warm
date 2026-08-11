@@ -94,5 +94,29 @@ services:
       retries: 6
       start_period: 60s
 
+  web:
+    build:
+      context: ./web
+      args:
+        # Next 서버가 /api/* 를 이 주소로 중계한다 (next.config.ts).
+        # 브라우저는 web만 보고, 게이트웨이 주소를 알 필요가 없다.
+        # ⚠️ 런타임 environment가 아니라 빌드 인자다 — rewrites 설정은
+        # 빌드 시점에 standalone 출력으로 직렬화되기 때문 (web/Dockerfile).
+        API_PROXY_TARGET: http://backend:8080
+    depends_on:
+      # 프론트 자체는 백엔드 없이도 뜨지만, 프록시 대상이 없는 상태로
+      # healthy가 되면 --wait가 "스택 정상"을 잘못 보고한다.
+      backend:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    healthcheck:
+      # 알파인 이미지라 curl이 없다 — Node 22 내장 fetch로 대신한다.
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+
 volumes:
   db-data:

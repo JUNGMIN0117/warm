@@ -1,0 +1,5 @@
+# pnpm 11은 의존성의 postinstall 빌드 스크립트를 기본 차단한다(공급망 방어).
+# 여기 명시한 패키지만 빌드를 허용한다 — sharp는 next/image 최적화용 네이티브 모듈.
+allowBuilds:
+  sharp: true
+  unrs-resolver: true
