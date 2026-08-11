@@ -474,6 +474,8 @@ Boot 4는 자동설정을 잘게 쪼개면서 패키지와 아티팩트가 대�
 
 > ⚠️ Windows에서 `corepack enable`은 Node 설치 디렉터리(Program Files) 쓰기 권한이 없으면 EPERM으로 실패합니다. 이 경우 `npm install -g pnpm`이 사용자 디렉터리에 설치하는 우회가 됩니다.
 
+> ⚠️ CI의 `pnpm/action-setup`은 **저장소 루트의 package.json**에서 `packageManager`를 찾습니다. 모노리포처럼 프론트가 하위 디렉터리(`web/`)에 있으면 `package_json_file: web/package.json`을 명시해야 합니다 — 실제로 이것 때문에 PR CI가 첫 실행에서 죽었습니다. 잡의 `working-directory` 기본값은 **run 스텝에만** 적용되고 액션(uses)에는 적용되지 않는다는 것이 함정의 뿌리입니다.
+
 ---
 
 ## 3부. 예상 질문과 답변

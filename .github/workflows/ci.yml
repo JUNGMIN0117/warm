@@ -72,7 +72,12 @@ jobs:
       - name: pnpm 설치
         # 버전을 여기 적지 않는다 — package.json의 packageManager 필드가
         # 단일 출처다. 두 군데 적으면 반드시 어긋난다.
+        # ⚠️ 이 액션은 기본으로 저장소 루트의 package.json을 읽는다.
+        # 우리 것은 web/에 있으므로 경로를 알려줘야 한다 (없으면
+        # "Unable to locate package.json"으로 즉사).
         uses: pnpm/action-setup@v4
+        with:
+          package_json_file: web/package.json
 
       - name: Node 22 설치
         uses: actions/setup-node@v4
