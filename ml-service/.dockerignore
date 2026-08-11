@@ -1,0 +1,24 @@
+# 빌드 컨텍스트에서 제외 — 전송량과 캐시 무효화를 줄인다.
+# .venv를 빼는 것이 특히 중요하다. 수백 MB를 데몬에 보내게 되고,
+# 로컬에서 패키지 하나만 설치해도 캐시가 통째로 깨진다.
+.venv/
+models/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# 테스트는 이미지에 들어가지 않는다. CI에서 돈다.
+tests/
+
+# 데이터·산출물
+data/
+datasets/
+*.npy
+*.onnx
+*.pt
+
+.env
+.env.local

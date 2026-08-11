@@ -97,9 +97,15 @@ FastAPI는 **완전 무상태**를 유지한다. DB·인증·세션 금지. 입�
   - **원본 이미지는 저장하지 않는다.** 해시·측정 수치·대표 피부색만.
     스키마에 컬럼 자체가 없고 테스트가 그것을 지킨다
   - JWT 서명 키에 기본값 없음 — 없으면 기동 실패 (`PCAI_JWT_SECRET`)
+- [x] **Compose · CI** (Step 6에서 앞당김)
+  - 네 서비스 컨테이너화. 멀티스테이지 + 레이어 캐시(POM/락파일 먼저 복사)
+  - **ml-service와 Redis는 호스트에 노출하지 않는다.** ml-service는 인증이 없다
+  - `depends_on: service_healthy` — `service_started`로는 Flyway가 DB보다 먼저 돈다
+  - CI 4단계: Python 검증 ∥ Java 검증 → 이미지 빌드 → **Compose 종단 기동**
+  - CI는 모델을 받지 않는다 (모델 없으면 102 passed / 2 skipped)
 - [ ] **Step 4** — Next.js 프론트 (업로드/웹캠 → 전처리 단계 시각화 → 결과 카드 + 3축 게이지 + 팔레트)
 - [ ] **Step 5** — CNN 학습(pseudo-label) + 규칙 엔진 대비 평가 + Grad-CAM으로 P2 검증
-- [ ] **Step 6** — Docker Compose 통합, CI, 배포
+- [ ] **Step 6** — 관측성(상관관계 ID·구조화 로그), 배포 파이프라인, 회고
 
 각 Step 완료 시 README의 진행 상황 체크박스를 갱신한다.
 
@@ -181,8 +187,20 @@ cd ml-service && uv sync && uv run python scripts/download_models.py
 ```
 
 ```bash
-cd ml-service && uv run pytest -q                                  # 80 passed 여야 정상
+cd ml-service && uv run pytest -q                                  # 104 passed 여야 정상
 cd ml-service && uv run ruff check . && uv run mypy app/ tests/ scripts/
 ```
 
-모델 파일이 없으면 MediaPipe 실추론 테스트는 skip되고 나머지는 통과한다 — CI에서 모델 없이도 대부분의 회귀를 잡을 수 있게 의도한 설계다.
+모델 파일이 없으면 MediaPipe 실추론 테스트는 skip된다 (102 passed / 2 skipped) — CI에서 모델 없이도 회귀를 잡을 수 있게 의도한 설계다.
+
+백엔드는 Docker가 켜져 있어야 한다 (Testcontainers).
+
+```bash
+cd backend && ./mvnw verify                                        # 134 tests
+```
+
+전체 스택:
+
+```bash
+docker compose up --build --wait
+```
