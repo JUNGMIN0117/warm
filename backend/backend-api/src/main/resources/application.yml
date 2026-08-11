@@ -70,3 +70,11 @@ management:
 logging:
   level:
     com.personalcolor: INFO
+    # 요청 완료 로그(RequestObservabilityFilter). actuator 프로브는 DEBUG로
+    # 내려가 있어 이 레벨(INFO)에서는 보이지 않는다 — 의도된 동작.
+    http.request: INFO
+  # 구조화(JSON) 로그는 여기서 켜지 않는다. 로컬 개발은 사람이 읽는
+  # 텍스트가 낫고, 컨테이너에서만 환경변수로 켠다:
+  #   LOGGING_STRUCTURED_FORMAT_CONSOLE=ecs  (docker-compose.yml)
+  # ecs(Elastic Common Schema)를 고른 이유는 ADR-008 참조. MDC의
+  # correlationId가 별도 필드로 실려 요청 단위 검색이 된다.

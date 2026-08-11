@@ -50,6 +50,27 @@ describe("toApiError", () => {
     expect(error.message.length).toBeGreaterThan(0);
   });
 
+  it("X-Request-Id 헤더를 requestId로 보존한다 — 서버 로그와 잇는 문의 코드", async () => {
+    const response = new Response(
+      JSON.stringify({ code: "ANALYZER_UNAVAILABLE", message: "분석기 연결 실패" }),
+      { status: 503, headers: { "X-Request-Id": "corr-abc-123" } },
+    );
+
+    const error = await toApiError(response);
+
+    expect(error.requestId).toBe("corr-abc-123");
+  });
+
+  it("헤더가 없으면 requestId는 null이다", async () => {
+    const response = new Response(JSON.stringify({ code: "NOT_FOUND", message: "없음" }), {
+      status: 404,
+    });
+
+    const error = await toApiError(response);
+
+    expect(error.requestId).toBeNull();
+  });
+
   it("code가 없는 JSON에도 폴백 코드를 준다", async () => {
     const response = new Response(JSON.stringify({ unexpected: true }), { status: 500 });
 

@@ -14,7 +14,7 @@
 
 1. **[01-architecture.md](01-architecture.md)** — 경계·계층·데이터 흐름·오류 처리 전략
 2. **[09-data-model.md](09-data-model.md)** — 스키마 설계 근거, 인덱스, 제약조건
-3. **[07-decisions/](07-decisions/)** — ADR 7건. 각 결정의 검토 과정
+3. **[07-decisions/](07-decisions/)** — ADR 8건. 각 결정의 검토 과정
 4. **[05-api-spec.md](05-api-spec.md)** — API 계약과 오류 코드
 
 ### 📚 "이 프로젝트를 공부하고 싶다 / 면접을 준비한다"
@@ -40,7 +40,7 @@
 | [04-preprocessing.md](04-preprocessing.md) | 전처리 파이프라인 | ✅ |
 | [05-api-spec.md](05-api-spec.md) | API 명세 (게이트웨이 + ML 서비스) | ✅ |
 | [06-frontend.md](06-frontend.md) | 프론트엔드 UX 설계 의도 | ✅ |
-| [07-decisions/](07-decisions/) | ADR 7건 | ✅ |
+| [07-decisions/](07-decisions/) | ADR 8건 | ✅ |
 | 08-retrospective.md | 원본 대비 개선점 회고 | Step 6 |
 | [09-data-model.md](09-data-model.md) | 데이터 모델 상세 | ✅ |
 | [10-engineering-notes.md](10-engineering-notes.md) | 개념 정리 + 면접 대비 | ✅ |
@@ -60,6 +60,7 @@
 | [005](07-decisions/ADR-005-service-boundary.md) | 측정=Python, 해석=Spring | 팔레트 변경에 추론 서버 재배포가 필요한 구조 회피 |
 | [006](07-decisions/ADR-006-build-and-modules.md) | Maven · 3모듈 · Boot 4.1 | 의존 방향을 컴파일이 강제 |
 | [007](07-decisions/ADR-007-frontend-integration.md) | rewrites 프록시 · localStorage 토큰 | 토큰 권한 크기에 맞춘 방어 수준 |
+| [008](07-decisions/ADR-008-observability.md) | 상관관계 ID · 구조화 로그 | 발급 주체는 게이트웨이 하나, OTel은 아직 과함 |
 
 ---
 

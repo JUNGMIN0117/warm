@@ -60,6 +60,9 @@ class Settings(BaseSettings):
     stage_image_quality: int = Field(default=80, ge=1, le=100)
     """단계 이미지 WebP 품질. 시각화용이라 원본 충실도가 필요 없다."""
 
+    log_format: str = Field(default="plain", pattern="^(plain|json)$")
+    """로그 출력 형식. 컨테이너는 json(수집기가 필드 검색), 로컬은 plain."""
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

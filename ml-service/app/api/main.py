@@ -40,6 +40,7 @@ from ..pipeline.pipeline import PipelineConfig, PreprocessPipeline
 from .detector_pool import DetectorPool
 from .encoding import encode_stages
 from .error_mapping import error_detail, map_error
+from .observability import RequestContextMiddleware, configure_logging
 from .schemas import AnalysisResponse, ErrorResponse, HealthResponse
 from .settings import Settings, get_settings
 
@@ -115,6 +116,7 @@ def create_app(state_builder: StateBuilder = build_state) -> FastAPI:
         첫 요청에 로딩을 미루면 그 요청만 수백 ms 느려지고, 컨테이너
         오케스트레이터의 readiness 판정도 거짓말이 된다.
         """
+        configure_logging(get_settings().log_format)
         state = state_builder(get_settings())
         app.state.service = state
         try:
@@ -134,6 +136,10 @@ def create_app(state_builder: StateBuilder = build_state) -> FastAPI:
         ),
         lifespan=lifespan,
     )
+
+    # 게이트웨이가 발급한 상관관계 ID를 받아 모든 로그에 싣고 되돌려준다.
+    # 이 서비스는 ID를 발급하지 않는다 — 발급 주체는 하나여야 한다 (ADR-008).
+    app.add_middleware(RequestContextMiddleware)
 
     @app.exception_handler(PipelineError)
     async def handle_pipeline_error(
