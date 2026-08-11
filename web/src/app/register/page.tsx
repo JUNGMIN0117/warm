@@ -24,7 +24,8 @@ export default function RegisterPage() {
 
   return (
     <div className="mx-auto max-w-sm pt-8">
-      <Card>
+      <Card className="relative overflow-hidden">
+        <span className="bg-gradient-brand absolute inset-x-0 top-0 h-1" aria-hidden />
         <CardHeader>
           <CardTitle>회원가입</CardTitle>
           <CardDescription>

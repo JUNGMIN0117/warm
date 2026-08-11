@@ -22,25 +22,25 @@ export interface SeasonTheme {
 
 export const SEASON_THEMES: Record<SeasonCode, SeasonTheme> = {
   spring_warm: {
-    gradient: "from-amber-100 via-orange-50 to-rose-50 dark:from-amber-950/40 dark:via-orange-950/30 dark:to-rose-950/20",
+    gradient: "from-amber-200/70 via-orange-100 to-rose-100 dark:from-amber-900/50 dark:via-orange-950/40 dark:to-rose-950/30",
     bar: "bg-amber-500",
     text: "text-amber-700 dark:text-amber-400",
     badge: "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200",
   },
   summer_cool: {
-    gradient: "from-sky-100 via-indigo-50 to-pink-50 dark:from-sky-950/40 dark:via-indigo-950/30 dark:to-pink-950/20",
+    gradient: "from-sky-200/70 via-indigo-100 to-pink-100 dark:from-sky-900/50 dark:via-indigo-950/40 dark:to-pink-950/30",
     bar: "bg-sky-500",
     text: "text-sky-700 dark:text-sky-400",
     badge: "bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-200",
   },
   autumn_warm: {
-    gradient: "from-orange-100 via-amber-50 to-yellow-50 dark:from-orange-950/40 dark:via-amber-950/30 dark:to-yellow-950/20",
+    gradient: "from-orange-200/70 via-amber-100 to-yellow-100 dark:from-orange-900/50 dark:via-amber-950/40 dark:to-yellow-950/30",
     bar: "bg-orange-600",
     text: "text-orange-700 dark:text-orange-400",
     badge: "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200",
   },
   winter_cool: {
-    gradient: "from-indigo-100 via-violet-50 to-slate-50 dark:from-indigo-950/40 dark:via-violet-950/30 dark:to-slate-950/20",
+    gradient: "from-indigo-200/70 via-violet-100 to-slate-100 dark:from-indigo-900/50 dark:via-violet-950/40 dark:to-slate-950/30",
     bar: "bg-indigo-600",
     text: "text-indigo-700 dark:text-indigo-400",
     badge: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200",

@@ -1,6 +1,6 @@
-# Personal Color AI
+# 사계 (SAGYE) — Personal Color AI
 
-> 얼굴 사진 한 장으로 4계절 퍼스널 컬러를 판정하고, **왜 그렇게 판정했는지를 수치로 설명하는** 서비스
+> 얼굴 사진 한 장으로 4계절 퍼스널 컬러를 판정하고, **왜 그렇게 판정했는지를 수치로 설명하는** 서비스. 서비스명 "사계"는 봄·여름·가을·겨울 4계절 판정이라는 정체성에서 왔습니다.
 >
 > Java 21 · Spring Boot 4.1 · Python 3.12 · FastAPI · Next.js 15 · PostgreSQL 16 · Redis · Docker
 

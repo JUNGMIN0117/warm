@@ -49,13 +49,18 @@ export function ImageDropzone({ onSelect, disabled = false }: ImageDropzoneProps
       }}
       className={cn(
         "flex w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed",
-        "border-muted-foreground/25 bg-muted/30 px-6 py-14 text-center transition-colors",
-        "hover:border-primary/50 hover:bg-muted/50 focus-visible:outline-2",
-        dragOver && "border-primary bg-primary/5",
+        "border-muted-foreground/25 bg-gradient-to-br from-rose-50/40 via-transparent to-indigo-50/40",
+        "px-6 py-14 text-center transition-colors",
+        "dark:from-rose-950/15 dark:to-indigo-950/15",
+        "hover:border-primary/50 hover:from-rose-50/70 hover:to-indigo-50/70",
+        "dark:hover:from-rose-950/30 dark:hover:to-indigo-950/30 focus-visible:outline-2",
+        dragOver && "border-primary from-rose-50 to-indigo-50",
         disabled && "pointer-events-none opacity-50",
       )}
     >
-      <ImagePlus className="size-9 text-muted-foreground" aria-hidden />
+      <span className="bg-gradient-brand flex size-12 items-center justify-center rounded-full">
+        <ImagePlus className="size-6 text-white" aria-hidden />
+      </span>
       <div className="space-y-1">
         <p className="font-medium">사진을 끌어다 놓거나 클릭해서 선택</p>
         <p className="text-sm text-muted-foreground">

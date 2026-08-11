@@ -44,7 +44,9 @@ export function AnalysisProgress() {
 
   return (
     <div className="mx-auto w-full max-w-md space-y-4 py-8" role="status" aria-live="polite">
-      <p className="text-center text-lg font-semibold">사진을 분석하고 있습니다</p>
+      <p className="text-center text-lg font-semibold">
+        <span className="text-gradient-brand">나의 계절</span>을 찾고 있습니다
+      </p>
       <ol className="space-y-3">
         {STEPS.map((label, index) => {
           const done = index < reached;
@@ -60,7 +62,7 @@ export function AnalysisProgress() {
               <span
                 className={cn(
                   "flex size-7 shrink-0 items-center justify-center rounded-full border text-xs",
-                  done && "border-primary bg-primary text-primary-foreground",
+                  done && "bg-gradient-brand border-transparent text-white",
                   active && "border-primary text-primary",
                   !done && !active && "border-muted-foreground/30 text-muted-foreground",
                 )}

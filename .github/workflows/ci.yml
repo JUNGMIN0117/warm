@@ -205,8 +205,8 @@ jobs:
           test "$status" = "400" || { echo "400이 아님: $status"; exit 1; }
 
           echo "--- 프론트 기동 확인 ---"
-          curl -fsS http://127.0.0.1:3000/ | grep -q "퍼스널 컬러" \
-            || { echo "프론트 응답에 서비스명이 없음"; exit 1; }
+          curl -fsS http://127.0.0.1:3000/ | grep -q "사계" \
+            || { echo "프론트 응답에 서비스명(사계)이 없음"; exit 1; }
 
           echo "--- 프론트 → 게이트웨이 프록시 확인 ---"
           status=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/api/v1/seasons)

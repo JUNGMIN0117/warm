@@ -18,7 +18,8 @@ export default function LoginPage() {
 
   return (
     <div className="mx-auto max-w-sm pt-8">
-      <Card>
+      <Card className="relative overflow-hidden">
+        <span className="bg-gradient-brand absolute inset-x-0 top-0 h-1" aria-hidden />
         <CardHeader>
           <CardTitle>로그인</CardTitle>
           <CardDescription>분석 이력을 보려면 로그인하세요. 분석 자체는 로그인 없이도 됩니다.</CardDescription>

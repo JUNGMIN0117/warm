@@ -55,15 +55,29 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* ── 사계(SAGYE) 브랜드 팔레트 ──────────────────────────────────
+   네 계절이 곧 브랜드다. 봄 코랄 → 여름 스카이 → 가을 앰버 → 겨울
+   인디고를 시그니처 그라데이션으로 쓰고, primary는 봄 코랄 계열로.
+   계절별 "판정 결과" 색은 season-theme.ts가 소유한다 — 여기는 브랜드. */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --season-spring: oklch(0.72 0.16 25);   /* 코랄 */
+  --season-summer: oklch(0.72 0.13 235);  /* 스카이 */
+  --season-autumn: oklch(0.72 0.15 65);   /* 앰버 */
+  --season-winter: oklch(0.55 0.19 280);  /* 인디고 */
+  --gradient-brand: linear-gradient(120deg,
+    var(--season-spring), var(--season-summer),
+    var(--season-autumn), var(--season-winter));
+}
+
+:root {
+  --background: oklch(0.995 0.003 80);
+  --foreground: oklch(0.16 0.01 300);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.16 0.01 300);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  --popover-foreground: oklch(0.16 0.01 300);
+  --primary: oklch(0.62 0.17 25);
+  --primary-foreground: oklch(0.985 0.005 60);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -73,7 +87,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: oklch(0.72 0.1 25);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -91,14 +105,14 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --background: oklch(0.15 0.012 300);
+  --foreground: oklch(0.985 0.005 60);
+  --card: oklch(0.2 0.015 300);
+  --card-foreground: oklch(0.985 0.005 60);
+  --popover: oklch(0.2 0.015 300);
+  --popover-foreground: oklch(0.985 0.005 60);
+  --primary: oklch(0.72 0.15 25);
+  --primary-foreground: oklch(0.16 0.02 25);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -108,7 +122,7 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: oklch(0.6 0.12 25);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -134,4 +148,31 @@
   html {
     @apply font-sans;
   }
+}
+
+/* ── 브랜드 유틸리티 ──────────────────────────────────────── */
+
+/* 사계 시그니처 그라데이션 텍스트 (로고·히어로 강조) */
+.text-gradient-brand {
+  background: var(--gradient-brand);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* 사계 시그니처 그라데이션 배경 (버튼·강조 요소) */
+.bg-gradient-brand {
+  background: var(--gradient-brand);
+}
+
+/* 히어로 뒤에 깔리는 계절색 블롭 — 콘텐츠를 가리지 않도록 저채도·블러 */
+.season-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(72px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+.dark .season-blob {
+  opacity: 0.22;
 }

@@ -63,7 +63,7 @@ export function ImagePicker({ onAnalyze, disabled = false }: ImagePickerProps) {
           </Button>
           <Button
             type="button"
-            className="flex-1"
+            className="bg-gradient-brand flex-1 border-0 text-white hover:opacity-90"
             size="lg"
             disabled={disabled}
             onClick={() => onAnalyze(selected)}

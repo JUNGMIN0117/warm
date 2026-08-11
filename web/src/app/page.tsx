@@ -40,16 +40,40 @@ export default function HomePage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
-      <section className="space-y-3 pt-4 text-center">
+    <div className="relative mx-auto max-w-2xl space-y-8">
+      {/* 계절색 블롭 — 히어로 영역의 배경 분위기. 색은 --season-* 변수가 출처 */}
+      <div className="absolute inset-x-0 -top-8 -z-10 h-80 overflow-visible" aria-hidden>
+        <span
+          className="season-blob left-[-10%] top-0 size-52"
+          style={{ backgroundColor: "var(--season-spring)" }}
+        />
+        <span
+          className="season-blob right-[-8%] top-4 size-48"
+          style={{ backgroundColor: "var(--season-summer)" }}
+        />
+        <span
+          className="season-blob left-[22%] top-28 size-44"
+          style={{ backgroundColor: "var(--season-autumn)" }}
+        />
+        <span
+          className="season-blob right-[18%] top-36 size-40"
+          style={{ backgroundColor: "var(--season-winter)" }}
+        />
+      </div>
+
+      <section className="space-y-3 pt-6 text-center">
+        <p className="text-sm font-semibold tracking-[0.25em] text-muted-foreground uppercase">
+          봄 · 여름 · 가을 · 겨울
+        </p>
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-          사진 한 장으로 알아보는
-          <br />내 퍼스널 컬러
+          사진 한 장으로 만나는
+          <br />
+          <span className="text-gradient-brand">나의 계절</span>
         </h1>
         <p className="text-muted-foreground">
-          봄웜 · 여름쿨 · 가을웜 · 겨울쿨 — 판정만 주지 않습니다.
+          판정만 주지 않습니다 — 피부색 측정값과
           <br className="hidden sm:block" />
-          피부색 측정값과 판정 근거까지 수치로 보여드려요.
+          판정 근거까지 수치로 보여드려요.
         </p>
       </section>
 
@@ -58,16 +82,16 @@ export default function HomePage() {
       <ImagePicker onAnalyze={handleAnalyze} />
 
       <section className="grid gap-3 text-center text-xs text-muted-foreground sm:grid-cols-3">
-        <div className="rounded-lg border bg-muted/20 p-3">
-          <p className="font-medium text-foreground">원본 미저장</p>
+        <div className="rounded-xl border border-rose-200/60 bg-rose-50/50 p-3 dark:border-rose-900/40 dark:bg-rose-950/20">
+          <p className="font-medium text-rose-900 dark:text-rose-200">원본 미저장</p>
           사진은 분석 즉시 버려지고 측정 수치만 남습니다
         </div>
-        <div className="rounded-lg border bg-muted/20 p-3">
-          <p className="font-medium text-foreground">근거 공개</p>
+        <div className="rounded-xl border border-sky-200/60 bg-sky-50/50 p-3 dark:border-sky-900/40 dark:bg-sky-950/20">
+          <p className="font-medium text-sky-900 dark:text-sky-200">근거 공개</p>
           색상각·명도·채도 3축 측정값을 그대로 보여줍니다
         </div>
-        <div className="rounded-lg border bg-muted/20 p-3">
-          <p className="font-medium text-foreground">로그인 불필요</p>
+        <div className="rounded-xl border border-indigo-200/60 bg-indigo-50/50 p-3 dark:border-indigo-900/40 dark:bg-indigo-950/20">
+          <p className="font-medium text-indigo-900 dark:text-indigo-200">로그인 불필요</p>
           이력을 남기고 싶을 때만 계정을 만드세요
         </div>
       </section>
