@@ -1,0 +1,17 @@
+# 게시된 이미지로 스택을 띄우는 오버레이 — 소스 빌드 없이 실행해볼 때.
+#
+#   echo "PCAI_JWT_SECRET=$(openssl rand -base64 48)" > .env
+#   docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d --no-build --pull always
+#
+# 이미지는 main 머지마다 CI의 release 잡이 GHCR에 게시한다. latest 대신
+# sha-<커밋> 태그를 쓰면 정확한 커밋의 조합을 재현할 수 있다.
+# 기본 파일(docker-compose.yml)의 build 설정은 --no-build로 무시된다 —
+# 이 파일은 image 이름만 덮어쓴다.
+
+services:
+  ml-service:
+    image: ghcr.io/jungmin0117/warm/ml-service:${IMAGE_TAG:-latest}
+  backend:
+    image: ghcr.io/jungmin0117/warm/backend:${IMAGE_TAG:-latest}
+  web:
+    image: ghcr.io/jungmin0117/warm/web:${IMAGE_TAG:-latest}
