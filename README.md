@@ -463,10 +463,10 @@ personal-color-ai/
 - [x] **Compose · CI** — 네 서비스 컨테이너화, GitHub Actions 4단계 검증 *(Step 6에서 앞당김)*
 - [x] **Step 4** — Next.js 프론트엔드: 업로드/웹캠 · 하이브리드 파이프라인 시각화 · 3축 게이지 · 인증/이력
 - [x] **Step 5 (도구)** — pseudo-label 생성 · CNN 학습(PyTorch→ONNX) · 평가(일치율·ECE) · Grad-CAM, 합성 데이터로 종단 검증
-- [ ] **Step 5 (실행)** — FairFace 실데이터 학습 · 수동 검증셋 라벨링 · Phase 3 비교 평가 (P2 결론)
+- [x] **Step 5 (실행)** — FairFace 학습 · 수동 검증셋(76장) 평가: 규칙 엔진 **63.2%**(확신 케이스 한정, ±11%p) · **P2 재현 확인**(crop 모델 주목의 72%가 피부 밖) → [상세](docs/02-data-pipeline.md)
 - [x] **Step 6a** — 관측성: 상관관계 ID 전파(프론트→Spring→FastAPI) · 구조화 로그(ECS/JSON) · 요청 완료 로그
 - [x] **Step 6b (릴리스)** — main 머지 시 GHCR 이미지 게시 (종단 검증 통과분만, sha 태그로 재현 가능). *실서버 배포는 하지 않기로 결정*
-- [ ] **Step 6b (회고)** — 08-retrospective.md
+- [x] **Step 6b (회고)** — [08-retrospective.md](docs/08-retrospective.md) *(중간 회고 — P2 결론·정확도는 Step 5 실행 후 갱신)*
 
 ---
 
@@ -482,6 +482,7 @@ personal-color-ai/
 | [05-api-spec.md](docs/05-api-spec.md) | API 명세 (게이트웨이 + ML) |
 | [06-frontend.md](docs/06-frontend.md) | 프론트엔드 UX 설계 의도 — 하이브리드 시각화 · 경계 판정 표현 |
 | [02-data-pipeline.md](docs/02-data-pipeline.md) | 데이터 수집·pseudo-label 학습·P2 실험 설계 |
+| [08-retrospective.md](docs/08-retrospective.md) | 원본(2022) 대비 회고 — 2022년의 나에게 답장하기 |
 | [09-data-model.md](docs/09-data-model.md) | 데이터 모델 상세 — 스키마 설계 근거 |
 | [10-engineering-notes.md](docs/10-engineering-notes.md) | **개념 정리 + 면접 대비** |
 | [07-decisions/](docs/07-decisions/) | ADR 6건 |

@@ -33,16 +33,14 @@ from torch import Tensor
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from scripts.training_common import (
+from scripts.dataset_common import (
     CROP_DIR_NAMES,
     LabeledCrop,
-    SmallCnn,
     force_utf8_stdout,
     is_validation,
-    load_crop_tensor,
     read_labels,
-    resolve_device,
 )
+from scripts.training_common import SmallCnn, load_crop_tensor, resolve_device
 
 
 def expected_calibration_error(
@@ -140,7 +138,8 @@ def main() -> int:
     model.load_state_dict(torch.load(args.model, weights_only=True, map_location=device))
     model.eval()
 
-    rows = [r for r in read_labels(args.data) if is_validation(r.filename)]
+    all_rows = read_labels(args.data)
+    rows = [r for r in all_rows if is_validation(r.filename)]
     if not rows:
         print("val 분할에 표본이 없습니다.", file=sys.stderr)
         return 1
@@ -180,21 +179,42 @@ def main() -> int:
     }
 
     # ── 3) Phase 3 — 수동 라벨이 있을 때만 절대 정확도 ─────────
+    # 채점 범위가 둘이 다른 것이 핵심이다. 규칙 엔진은 학습이라는 것이
+    # 없어 train/val 구분이 무의미하므로 수동 라벨 전체에서 잰다.
+    # CNN은 train 분할 이미지를 학습에서 이미 봤으므로(pseudo 라벨로지만
+    # 이미지 자체를 암기했을 수 있다) val 교집합에서만 잰다 — 그래서
+    # 두 정확도의 표본 크기가 다르며, 각자의 n을 함께 보고한다.
     if args.manual is not None:
         manual = read_manual_labels(args.manual)
-        judged = [r for r in rows if r.filename in manual]
-        if judged:
-            rule_acc = sum(rule_label(r) == manual[r.filename] for r in judged) / len(judged)
-            cnn_acc = sum(
-                predictions[r.filename][0] == manual[r.filename] for r in judged
-            ) / len(judged)
+        rule_judged = [r for r in all_rows if r.filename in manual]
+        cnn_judged = [r for r in rows if r.filename in manual]
+        if rule_judged:
+            rule_acc = sum(
+                rule_label(r) == manual[r.filename] for r in rule_judged
+            ) / len(rule_judged)
             report["manual"] = {
-                "size": len(judged),
-                "rule_engine_accuracy": round(rule_acc, 4),
-                "cnn_accuracy": round(cnn_acc, 4),
+                "rule_engine": {"n": len(rule_judged), "accuracy": round(rule_acc, 4)},
+                "cnn": (
+                    {
+                        "n": len(cnn_judged),
+                        "accuracy": round(
+                            sum(
+                                predictions[r.filename][0] == manual[r.filename]
+                                for r in cnn_judged
+                            ) / len(cnn_judged),
+                            4,
+                        ),
+                    }
+                    if cnn_judged
+                    else {"n": 0}
+                ),
+                "note": (
+                    "확신 케이스 한정(선택 편향 있음). "
+                    "CNN은 val 교집합만 — 학습에서 본 이미지 제외"
+                ),
             }
         else:
-            report["manual"] = {"size": 0}
+            report["manual"] = {"rule_engine": {"n": 0}, "cnn": {"n": 0}}
 
     # ── 4) Grad-CAM ────────────────────────────────────────────
     gradcam_dir = args.out / "gradcam"

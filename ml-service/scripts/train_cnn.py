@@ -23,18 +23,16 @@ from torch.utils.data import DataLoader, Dataset
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from scripts.training_common import (
+from scripts.dataset_common import (
     CROP_DIR_NAMES,
     CROP_SIZE,
     LabeledCrop,
-    SmallCnn,
     classes_for_target,
     force_utf8_stdout,
     is_validation,
-    load_crop_tensor,
     read_labels,
-    resolve_device,
 )
+from scripts.training_common import SmallCnn, load_crop_tensor, resolve_device
 
 
 @dataclass(frozen=True, slots=True)
@@ -113,7 +111,7 @@ def run_epoch(
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-            total_loss += float(loss) * len(labels)
+            total_loss += float(loss.detach()) * len(labels)
             correct += int((logits.argmax(dim=1) == labels).sum())
             seen += len(labels)
     return total_loss / max(seen, 1), correct / max(seen, 1)
