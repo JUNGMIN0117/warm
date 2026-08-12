@@ -34,7 +34,7 @@ from app.domain.features import extract_features
 from app.pipeline.errors import PipelineError
 from app.pipeline.face_detector import FaceDetector
 from app.pipeline.pipeline import PreprocessPipeline
-from scripts.training_common import (
+from scripts.dataset_common import (
     CROP_DIR_NAMES,
     CROP_SIZE,
     LABELS_FILENAME,

@@ -33,16 +33,14 @@ from torch import Tensor
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from scripts.training_common import (
+from scripts.dataset_common import (
     CROP_DIR_NAMES,
     LabeledCrop,
-    SmallCnn,
     force_utf8_stdout,
     is_validation,
-    load_crop_tensor,
     read_labels,
-    resolve_device,
 )
+from scripts.training_common import SmallCnn, load_crop_tensor, resolve_device
 
 
 def expected_calibration_error(
