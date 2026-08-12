@@ -20,9 +20,13 @@
 입력 피부의 좌표에서 각 프로토타입까지의 가중 거리를 잰 뒤
 소프트맥스로 확률화한다.
 
-    축 1  warm    ← h°   (CIELab 색상각)  : 노란기 ↔ 푸른기
+    축 1  warm    ← b*+L* 보정 노란기      : 노란기 ↔ 푸른기
     축 2  light   ← ITA° (개인 유형 각도) : 밝음 ↔ 깊음
     축 3  clear   ← C*   (채도)          : 선명 ↔ 뮤트
+
+축 1은 원래 h°(색상각) 단일 신호였으나, 첫 수동 검증셋(76장) 실측에서
+h°의 판별력 상한이 ~66%로 확인되어 b*와 L*의 선형 결합으로 재보정했다
+(ADR-010). 문헌 기반 잠정값이 실측으로 교체된 첫 사례다.
 
 if-else 트리 대신 이 방식을 쓴 이유는 세 가지다.
 1. 경계에서 확률이 부드럽게 변한다 → 신뢰도를 정직하게 표현할 수 있다.
@@ -52,15 +56,22 @@ class CalibrationConfig:
     잡았다. 아직 실측 캘리브레이션을 거치지 않았으므로 잠정값이다.
     """
 
-    hue_center: float = 62.0
-    """h° 중립점(도). 이보다 크면 노란기(warm), 작으면 푸른기(cool).
+    undertone_lightness_slope: float = 0.30
+    """보정 노란기 계산의 L* 기울기: adjusted_b = b* + slope·(L* - 50).
 
-    주의 — 사람 피부는 멜라닌과 카로틴 때문에 b*가 **항상 양수**다.
-    즉 쿨톤 피부라고 해서 h°가 0에 가까워지지 않는다. 실제 변별은
-    55~70° 사이 좁은 구간에서 일어나므로 중립점을 이 대역 한가운데 둔다.
+    2026-08-12 수동 검증셋 76장(확신 케이스 한정) 실측으로 h° 단일
+    신호를 교체하며 산출한 값 (ADR-010). 적합 방법이 중요하다 —
+    무제약 로지스틱 적합은 slope 1.93을 내놨지만 그 값은 교과서적
+    쿨 사례(로지·페일 쿨 패치, 도메인 테스트)를 웜으로 뒤집었다.
+    "밝을수록 웜"이라는 라벨러 습관에 과적합된 것으로 판단하고,
+    **교과서 4사례를 제약 조건으로 둔 스윕**에서 정확도 평탄 구간
+    (0.15~0.45, 76장 71.1%)의 중앙값을 취했다. 정직한 LOOCV 추정은
+    67% — 라운드 2 검증셋에서 재측정 대상이다.
     """
-    hue_scale: float = 5.0
-    """h° 로지스틱 기울기. 작을수록 경계가 날카로워진다."""
+    undertone_center: float = 21.0
+    """adjusted_b 중립점. 이보다 크면 warm. 제약 구간 내 정확도 최대점."""
+    undertone_scale: float = 10.0
+    """adjusted_b 로지스틱 기울기. 76장 1D 로지스틱 적합값(9.5)을 반올림."""
 
     ita_center: float = 48.0
     """ITA° 중립점(도). light 계열과 deep 계열을 가르는 지점.
@@ -107,7 +118,7 @@ class AxisReading:
 
     name: str
     raw_value: float
-    """원본 측정값 (h°, ITA°, C*)."""
+    """원시 측정값 (undertone=보정 b*, depth=ITA°, clarity=C*)."""
     normalized: float
     """0.0~1.0으로 정규화된 좌표."""
     low_label: str
@@ -170,8 +181,18 @@ def _compute_quality(features: SkinFeatures, config: CalibrationConfig) -> tuple
     return float(np.clip(quality, 0.0, 1.0)), warnings
 
 
+def _adjusted_b(features: SkinFeatures, cfg: CalibrationConfig) -> float:
+    """언더톤 축의 원시 점수 — 명도로 보정한 노란기.
+
+    b*는 노란기의 절대량이지만 밝은 피부일수록 같은 웜 인상에 필요한
+    b*가 작다(지각적 상호작용). L* 항이 그 기울기를 보정한다.
+    """
+    return features.b_star + cfg.undertone_lightness_slope * (features.lightness - 50.0)
+
+
 def _build_axes(
-    warm: float, light: float, clear: float, features: SkinFeatures
+    warm: float, light: float, clear: float,
+    features: SkinFeatures, adjusted_b: float,
 ) -> tuple[AxisReading, ...]:
     """정규화된 축 값에 사람이 읽을 해석을 붙인다."""
 
@@ -189,7 +210,7 @@ def _build_axes(
     return (
         AxisReading(
             name="undertone",
-            raw_value=features.hue_angle,
+            raw_value=adjusted_b,
             normalized=warm,
             low_label="쿨(푸른기)",
             high_label="웜(노란기)",
@@ -229,7 +250,8 @@ def classify(
     """
     cfg = config or CalibrationConfig()
 
-    warm = _logistic(features.hue_angle, cfg.hue_center, cfg.hue_scale)
+    adjusted_b = _adjusted_b(features, cfg)
+    warm = _logistic(adjusted_b, cfg.undertone_center, cfg.undertone_scale)
     light = _logistic(features.ita, cfg.ita_center, cfg.ita_scale)
     clear = _logistic(features.chroma, cfg.chroma_center, cfg.chroma_scale)
 
@@ -279,7 +301,7 @@ def classify(
         probabilities=probabilities,
         undertone=undertone,
         undertone_confidence=float(undertone_confidence),
-        axes=_build_axes(warm, light, clear, features),
+        axes=_build_axes(warm, light, clear, features, adjusted_b),
         quality_factor=quality,
         warnings=tuple(warnings),
     )

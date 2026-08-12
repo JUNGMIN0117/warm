@@ -281,9 +281,21 @@ def main() -> int:
     parser.add_argument("--target", choices=["undertone", "season"], default="undertone")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--seed", type=int, default=42, help="표시 순서 셔플 시드")
+    parser.add_argument(
+        "--exclude", type=Path, action="append", default=[],
+        help="이 CSV(filename 열)에 있는 파일을 큐에서 제외 — 이전 라운드의 "
+             "라벨·건너뜀 파일을 주면 새 라운드가 겹치지 않는다 (반복 지정 가능)",
+    )
     args = parser.parse_args()
 
-    filenames = [row.filename for row in read_labels(args.data)]
+    excluded: set[str] = set()
+    for path in args.exclude:
+        with path.open(encoding="utf-8", newline="") as f:
+            excluded.update(row["filename"] for row in csv.DictReader(f))
+
+    filenames = [
+        row.filename for row in read_labels(args.data) if row.filename not in excluded
+    ]
     random.Random(args.seed).shuffle(filenames)
 
     store = LabelStore(

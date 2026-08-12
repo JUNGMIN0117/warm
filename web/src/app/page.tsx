@@ -88,7 +88,7 @@ export default function HomePage() {
         </div>
         <div className="rounded-xl border border-sky-200/60 bg-sky-50/50 p-3 dark:border-sky-900/40 dark:bg-sky-950/20">
           <p className="font-medium text-sky-900 dark:text-sky-200">근거 공개</p>
-          색상각·명도·채도 3축 측정값을 그대로 보여줍니다
+          노란기·명도·채도 3축 측정값을 그대로 보여줍니다
         </div>
         <div className="rounded-xl border border-indigo-200/60 bg-indigo-50/50 p-3 dark:border-indigo-900/40 dark:bg-indigo-950/20">
           <p className="font-medium text-indigo-900 dark:text-indigo-200">로그인 불필요</p>

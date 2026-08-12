@@ -182,8 +182,8 @@ class TestClassifier:
         """중립점을 옮기면 판정이 바뀌어야 한다 — 튜닝 가능성 검증."""
         features = extract_features(_uniform_patch((225, 184, 153)))
 
-        warm_biased = classify(features, CalibrationConfig(hue_center=30.0))
-        cool_biased = classify(features, CalibrationConfig(hue_center=90.0))
+        warm_biased = classify(features, CalibrationConfig(undertone_center=-60.0))
+        cool_biased = classify(features, CalibrationConfig(undertone_center=120.0))
 
         assert warm_biased.undertone is Undertone.WARM
         assert cool_biased.undertone is Undertone.COOL

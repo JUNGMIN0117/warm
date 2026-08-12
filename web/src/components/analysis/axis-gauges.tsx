@@ -18,7 +18,8 @@ const AXIS_TITLES: Record<string, string> = {
 };
 
 const AXIS_UNITS: Record<string, string> = {
-  undertone: "h°",
+  // undertone 원시값은 h°가 아니라 명도 보정 노란기다 (ADR-010)
+  undertone: "보정 b*",
   depth: "ITA°",
   clarity: "C*",
 };
