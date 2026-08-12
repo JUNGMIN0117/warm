@@ -45,7 +45,12 @@ public class MlServiceConfiguration {
      */
     @Bean
     public WebClient mlServiceWebClient(MlServiceProperties props) {
-        return WebClient.builder().baseUrl(props.baseUrl()).build();
+        return WebClient.builder()
+                .baseUrl(props.baseUrl())
+                // 게이트웨이가 발급한 상관관계 ID를 ml-service까지 전파한다.
+                // 세 서비스의 로그를 요청 하나로 꿰는 실이다 (ADR-008).
+                .filter(new com.personalcolor.infrastructure.observability.CorrelationIdRelay())
+                .build();
     }
 
     /**

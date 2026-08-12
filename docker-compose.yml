@@ -50,6 +50,9 @@ services:
       context: ./ml-service
     environment:
       PCAI_DETECTOR_POOL_SIZE: ${ML_DETECTOR_POOL_SIZE:-2}
+      # 컨테이너 로그는 수집기가 읽는다 — 사람용 텍스트 대신 JSON.
+      # 로컬 개발(uv run uvicorn)은 이 변수가 없어 텍스트로 나온다.
+      PCAI_LOG_FORMAT: json
     # 포트를 노출하지 않는다 — 위 주석 참조.
     # 디버깅이 필요하면 아래 두 줄의 주석을 풀고 127.0.0.1로 접속한다.
     # ports:
@@ -85,6 +88,9 @@ services:
       # 기본값을 주지 않는다. .env에 없으면 Compose가 빈 값을 넘기고
       # 애플리케이션이 기동을 거부한다 — 의도된 동작이다(JwtProperties).
       PCAI_JWT_SECRET: ${PCAI_JWT_SECRET}
+      # 컨테이너에서만 구조화(ECS JSON) 로그를 켠다. 로컬은 텍스트가
+      # 읽기 좋고, 수집기 앞에서는 JSON이어야 필드 검색이 된다 (ADR-008).
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     healthcheck:

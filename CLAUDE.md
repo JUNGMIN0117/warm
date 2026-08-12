@@ -111,7 +111,13 @@ FastAPI는 **완전 무상태**를 유지한다. DB·인증·세션 금지. 입�
   - standalone 출력은 `BUILD_STANDALONE=1`일 때만 (Windows+pnpm 심링크 EPERM)
   - Vitest 23개 — 계약 테스트 (오류 매핑·토큰 보관·확률/경계 표시)
 - [ ] **Step 5** — CNN 학습(pseudo-label) + 규칙 엔진 대비 평가 + Grad-CAM으로 P2 검증
-- [ ] **Step 6** — 관측성(상관관계 ID·구조화 로그), 배포 파이프라인, 회고
+- [x] **Step 6a** — 관측성
+  - 상관관계 ID: **게이트웨이가 발급**(`X-Request-Id`, 유효하면 수용), ml-service는 수신만. 프론트는 실패 화면에 "문의 코드"로 노출 (ADR-008)
+  - Java는 MDC(+`finally` 정리 필수 — 스레드 재사용), Python은 contextvars(스레드풀 전파 때문에 threading.local 불가)
+  - `CorrelationIdRelay`는 `.block()` 덕에 MDC를 읽을 수 있다 — 완전 리액티브 전환 시 Reactor Context로
+  - 구조화 로그는 컨테이너에서만: Spring `LOGGING_STRUCTURED_FORMAT_CONSOLE=ecs`(Boot 4 내장), Python `PCAI_LOG_FORMAT=json`(표준 lib 포매터)
+  - 헬스체크 프로브 로그는 DEBUG로 — INFO 도배 방지
+- [ ] **Step 6b** — 배포 파이프라인, 회고
 
 각 Step 완료 시 README의 진행 상황 체크박스를 갱신한다.
 
@@ -161,7 +167,8 @@ docs/
  ├ 06-frontend.md        UX 설계 의도 (완료 — 하이브리드 시각화·프록시·토큰 결정)
  ├ 07-decisions/         ADR (완료: 001 스택, 002 데이터, 003 분류범위,
  │                            004 파이프라인 순서, 005 서비스 경계,
- │                            006 빌드·모듈·Boot 4, 007 프론트 통합)
+ │                            006 빌드·모듈·Boot 4, 007 프론트 통합,
+ │                            008 관측성)
  └ 08-retrospective.md   원본 대비 개선점 (Step 6)
 ```
 
@@ -193,22 +200,22 @@ cd ml-service && uv sync && uv run python scripts/download_models.py
 ```
 
 ```bash
-cd ml-service && uv run pytest -q                                  # 104 passed 여야 정상
+cd ml-service && uv run pytest -q                                  # 111 passed 여야 정상
 cd ml-service && uv run ruff check . && uv run mypy app/ tests/ scripts/
 ```
 
-모델 파일이 없으면 MediaPipe 실추론 테스트는 skip된다 (102 passed / 2 skipped) — CI에서 모델 없이도 회귀를 잡을 수 있게 의도한 설계다.
+모델 파일이 없으면 MediaPipe 실추론 테스트는 skip된다 (109 passed / 2 skipped) — CI에서 모델 없이도 회귀를 잡을 수 있게 의도한 설계다.
 
 백엔드는 Docker가 켜져 있어야 한다 (Testcontainers).
 
 ```bash
-cd backend && ./mvnw verify                                        # 134 tests
+cd backend && ./mvnw verify                                        # 141 tests
 ```
 
 프론트:
 
 ```bash
-cd web && pnpm test && pnpm lint && pnpm typecheck                 # 23 tests
+cd web && pnpm test && pnpm lint && pnpm typecheck                 # 25 tests
 ```
 
 전체 스택:

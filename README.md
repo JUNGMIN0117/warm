@@ -9,7 +9,7 @@
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-6DB33F)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791)
-![Tests](https://img.shields.io/badge/tests-261%20passing-success)
+![Tests](https://img.shields.io/badge/tests-277%20passing-success)
 
 ---
 
@@ -356,13 +356,13 @@ CI(GitHub Actions)가 푸시·PR마다 네 단계를 돕니다 — 서비스별 
 | 층위 | 무엇이 진짜인가 | 개수 |
 |---|---|---|
 | 도메인 단위 | 아무것도 (순수 함수) | 93 |
-| 어댑터 단위 | HTTP 서버(스텁), 캐시 키 | 18 |
-| 웹 슬라이스 | Spring MVC, 보안 필터 | 24 |
-| 파이프라인·API (Python) | 합성 이미지, TestClient | 70 |
+| 어댑터 단위 | HTTP 서버(스텁), 캐시 키, 상관관계 ID 전파 | 20 |
+| 웹 슬라이스·필터 | Spring MVC, 보안 필터, 관측성 필터 | 29 |
+| 파이프라인·API (Python) | 합성 이미지, TestClient, 관측성 미들웨어 | 77 |
 | 영속화 통합 | **PostgreSQL 16** | 17 |
 | 종단 통합 | **PostgreSQL + Redis + 전체 컨텍스트** | 16 |
-| 프론트 계약 (TypeScript) | jsdom — 오류 매핑 · 토큰 보관 · 확률/경계 표시 | 23 |
-| | **합계** | **261** |
+| 프론트 계약 (TypeScript) | jsdom — 오류 매핑 · 토큰 보관 · 확률/경계 표시 | 25 |
+| | **합계** | **277** |
 
 **실존 인물 사진이 저장소에 없습니다.** 파이프라인 테스트는 합성 얼굴(피부색 타원 + 도형)로 검증합니다. 눈과 입술을 **일부러 피부색으로 칠해** 색·밝기로는 걸러질 수 없게 만들고, 오직 랜드마크 폴리곤 제외만이 그 픽셀을 제거할 수 있음을 증명합니다.
 
@@ -381,6 +381,7 @@ Testcontainers가 Docker를 요구하므로 Docker가 꺼져 있으면 통합 �
 | [005](docs/07-decisions/ADR-005-service-boundary.md) | 측정=Python, 해석=Spring | 팔레트 변경에 추론 서버 재배포가 필요한 구조 회피 |
 | [006](docs/07-decisions/ADR-006-build-and-modules.md) | Maven · 3모듈 · Boot 4.1 | 의존 방향을 컴파일이 강제 |
 | [007](docs/07-decisions/ADR-007-frontend-integration.md) | rewrites 프록시 · localStorage 토큰 | CORS 제거, 토큰 권한 크기에 맞춘 방어 수준 |
+| [008](docs/07-decisions/ADR-008-observability.md) | 상관관계 ID는 게이트웨이가 발급 · ECS 구조화 로그 | 세 서비스 로그를 요청 하나로, OTel은 아직 과함 |
 
 ---
 
@@ -452,7 +453,8 @@ personal-color-ai/
 - [x] **Compose · CI** — 네 서비스 컨테이너화, GitHub Actions 4단계 검증 *(Step 6에서 앞당김)*
 - [x] **Step 4** — Next.js 프론트엔드: 업로드/웹캠 · 하이브리드 파이프라인 시각화 · 3축 게이지 · 인증/이력
 - [ ] **Step 5** — CNN 학습 + 규칙 엔진 대비 평가 + Grad-CAM으로 P2 검증
-- [ ] **Step 6** — 관측성 · 배포 파이프라인 · 회고
+- [x] **Step 6a** — 관측성: 상관관계 ID 전파(프론트→Spring→FastAPI) · 구조화 로그(ECS/JSON) · 요청 완료 로그
+- [ ] **Step 6b** — 배포 파이프라인 · 회고
 
 ---
 

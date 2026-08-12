@@ -124,6 +124,13 @@ function AnalyzeError({ error, onDismiss }: { error: Error; onDismiss: () => voi
             정면을 바라보고, 얼굴이 화면의 1/3 이상 나오는 밝은 사진일수록 잘 됩니다.
           </p>
         )}
+        {/* 사진 문제가 아닌 실패에만 문의 코드를 보여준다 — 서버 로그의
+            상관관계 ID와 같은 값이라 이 코드 하나로 해당 요청을 찾을 수 있다 */}
+        {!isPhotoProblem && error instanceof ApiError && error.requestId !== null && (
+          <p className="text-xs text-muted-foreground">
+            문의 코드: <code className="font-mono">{error.requestId}</code>
+          </p>
+        )}
         <Button type="button" size="sm" variant="outline" onClick={onDismiss}>
           확인
         </Button>

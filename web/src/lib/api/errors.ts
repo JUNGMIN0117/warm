@@ -29,13 +29,22 @@ export class ApiError extends Error {
   readonly code: ApiErrorCode;
   readonly status: number;
   readonly detail: unknown;
+  /** 게이트웨이가 발급한 상관관계 ID (X-Request-Id). 서버 로그와 이 오류를 잇는 열쇠다. */
+  readonly requestId: string | null;
 
-  constructor(code: ApiErrorCode, message: string, status: number, detail: unknown = null) {
+  constructor(
+    code: ApiErrorCode,
+    message: string,
+    status: number,
+    detail: unknown = null,
+    requestId: string | null = null,
+  ) {
     super(message);
     this.name = "ApiError";
     this.code = code;
     this.status = status;
     this.detail = detail;
+    this.requestId = requestId;
   }
 
   /**
@@ -86,5 +95,11 @@ export async function toApiError(response: Response): Promise<ApiError> {
     typeof body.message === "string"
       ? body.message
       : "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
-  return new ApiError(code, message, response.status, body.detail ?? null);
+  return new ApiError(
+    code,
+    message,
+    response.status,
+    body.detail ?? null,
+    response.headers.get("X-Request-Id"),
+  );
 }
