@@ -111,7 +111,7 @@ def run_epoch(
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-            total_loss += float(loss) * len(labels)
+            total_loss += float(loss.detach()) * len(labels)
             correct += int((logits.argmax(dim=1) == labels).sum())
             seen += len(labels)
     return total_loss / max(seen, 1), correct / max(seen, 1)

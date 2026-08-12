@@ -43,7 +43,9 @@ def load_crop_tensor(path: Path) -> Tensor:
 
     with Image.open(path) as img:
         rgb = img.convert("RGB")
-        array: NDArray[np.uint8] = np.asarray(rgb, dtype=np.uint8)
+        # np.array(copy)를 쓴다 — asarray는 PIL 버퍼의 읽기 전용 뷰라
+        # torch.from_numpy가 non-writable 경고를 낸다.
+        array: NDArray[np.uint8] = np.array(rgb, dtype=np.uint8)
     return torch.from_numpy(array).permute(2, 0, 1).float() / 255.0
 
 
