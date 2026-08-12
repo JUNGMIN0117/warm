@@ -53,6 +53,6 @@ public class AuthController {
         JwtService.IssuedToken token = jwtService.issue(user);
         return new AuthDtos.AuthResponse(
                 token.value(), token.expiresAt(),
-                user.id().toString(), user.displayName());
+                user.id().toString(), user.displayName(), user.role().code());
     }
 }

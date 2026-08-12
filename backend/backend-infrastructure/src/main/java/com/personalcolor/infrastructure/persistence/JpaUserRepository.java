@@ -1,5 +1,6 @@
 package com.personalcolor.infrastructure.persistence;
 
+import com.personalcolor.domain.user.Role;
 import com.personalcolor.domain.user.User;
 import com.personalcolor.domain.user.port.UserRepository;
 import org.springframework.stereotype.Repository;
@@ -23,7 +24,7 @@ public class JpaUserRepository implements UserRepository {
     public User save(User user) {
         return toDomain(jpa.save(new UserEntity(
                 user.id(), user.email(), user.passwordHash(),
-                user.displayName(), user.createdAt())));
+                user.displayName(), user.createdAt(), user.role().code())));
     }
 
     @Override
@@ -47,6 +48,7 @@ public class JpaUserRepository implements UserRepository {
     private static User toDomain(UserEntity entity) {
         return new User(
                 entity.getId(), entity.getEmail(), entity.getDisplayName(),
-                entity.getPasswordHash(), entity.getCreatedAt());
+                entity.getPasswordHash(), entity.getCreatedAt(),
+                Role.fromCode(entity.getRole()));
     }
 }

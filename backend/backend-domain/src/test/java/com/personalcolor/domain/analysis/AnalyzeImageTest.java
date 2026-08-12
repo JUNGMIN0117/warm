@@ -179,5 +179,10 @@ class AnalyzeImageTest {
         public List<SeasonProfile> findAll() {
             return List.of(Fixtures.profileFor(Season.AUTUMN_WARM));
         }
+
+        @Override
+        public SeasonProfile save(SeasonProfile profile) {
+            throw new UnsupportedOperationException("분석 경로는 큐레이션을 쓰지 않는다");
+        }
     }
 }

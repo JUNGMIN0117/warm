@@ -126,7 +126,8 @@ class PersistenceIntegrationTest {
             Integer applied = jdbc.queryForObject(
                     "SELECT count(*) FROM flyway_schema_history WHERE success", Integer.class);
 
-            assertThat(applied).isEqualTo(3);
+            // V1 코어 · V2 카탈로그 · V3 시드 · V4 역할(관리자)
+            assertThat(applied).isEqualTo(4);
         }
 
         @Test
@@ -190,6 +191,47 @@ class PersistenceIntegrationTest {
                     "INSERT INTO palette_colors (season_code, palette_kind, display_order, name, hex) "
                             + "VALUES ('spring_warm', 'BEST', 999, '테스트', '#ff7f50')"))
                     .hasMessageContaining("ck_palette_hex");
+        }
+    }
+
+    @Nested
+    @DisplayName("큐레이션 편집 (관리자 경로)")
+    class CurationUpdate {
+
+        @Test
+        @DisplayName("교체 저장한 큐레이션이 그대로 다시 읽힌다")
+        void roundTripsCurationReplacement() {
+            SeasonProfile before = profiles.findBySeason(Season.SUMMER_COOL);
+
+            SeasonProfile edited = new SeasonProfile(
+                    Season.SUMMER_COOL,
+                    before.labelKo(), before.labelEn(), before.emoji(),
+                    java.util.List.of("시원한", "맑은"),
+                    "편집된 설명입니다.",
+                    java.util.List.of(
+                            SeasonProfile.PaletteColor.of("라벤더", "#E6E6FA"),
+                            SeasonProfile.PaletteColor.of("스카이", "#87CEEB"),
+                            SeasonProfile.PaletteColor.of("로즈", "#FFC0CB"),
+                            SeasonProfile.PaletteColor.of("민트", "#98FF98"),
+                            SeasonProfile.PaletteColor.of("라일락", "#C8A2C8"),
+                            SeasonProfile.PaletteColor.of("페리윙클", "#CCCCFF")),
+                    java.util.List.of(
+                            SeasonProfile.PaletteColor.of("머스타드", "#D4A017"),
+                            SeasonProfile.PaletteColor.of("브릭", "#9C4A2F"),
+                            SeasonProfile.PaletteColor.of("카멜", "#B5813F")),
+                    java.util.List.of("은색 액세서리가 어울립니다."));
+
+            profiles.save(edited);
+            SeasonProfile reloaded = profiles.findBySeason(Season.SUMMER_COOL);
+
+            assertThat(reloaded.description()).isEqualTo("편집된 설명입니다.");
+            assertThat(reloaded.bestColors()).extracting(SeasonProfile.PaletteColor::name)
+                    .containsExactly("라벤더", "스카이", "로즈", "민트", "라일락", "페리윙클");
+            assertThat(reloaded.worstColors()).hasSize(3);
+            assertThat(reloaded.stylingTips()).containsExactly("은색 액세서리가 어울립니다.");
+            assertThat(reloaded.labelKo())
+                    .as("라벨은 편집 대상이 아니므로 유지된다")
+                    .isEqualTo(before.labelKo());
         }
     }
 

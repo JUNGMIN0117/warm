@@ -23,4 +23,10 @@ public interface SeasonProfileRepository {
 
     /** 네 계절 전부. 팔레트 둘러보기 화면이 쓴다. */
     List<SeasonProfile> findAll();
+
+    /**
+     * 큐레이션을 저장한다. 관리자 편집 경로(UpdateSeasonCuration) 전용 —
+     * 시드 이후 이 데이터가 바뀌는 유일한 방법이다.
+     */
+    SeasonProfile save(SeasonProfile profile);
 }

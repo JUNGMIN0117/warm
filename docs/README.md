@@ -14,7 +14,7 @@
 
 1. **[01-architecture.md](01-architecture.md)** — 경계·계층·데이터 흐름·오류 처리 전략
 2. **[09-data-model.md](09-data-model.md)** — 스키마 설계 근거, 인덱스, 제약조건
-3. **[07-decisions/](07-decisions/)** — ADR 10건. 각 결정의 검토 과정
+3. **[07-decisions/](07-decisions/)** — ADR 11건. 각 결정의 검토 과정
 4. **[05-api-spec.md](05-api-spec.md)** — API 계약과 오류 코드
 
 ### 📚 "이 프로젝트를 공부하고 싶다 / 면접을 준비한다"
@@ -40,7 +40,7 @@
 | [04-preprocessing.md](04-preprocessing.md) | 전처리 파이프라인 | ✅ |
 | [05-api-spec.md](05-api-spec.md) | API 명세 (게이트웨이 + ML 서비스) | ✅ |
 | [06-frontend.md](06-frontend.md) | 프론트엔드 UX 설계 의도 | ✅ |
-| [07-decisions/](07-decisions/) | ADR 10건 | ✅ |
+| [07-decisions/](07-decisions/) | ADR 11건 | ✅ |
 | [08-retrospective.md](08-retrospective.md) | 원본 대비 회고 — P1·P2·P3의 현재, 잘한 판단, 미완의 인정 | ✅ (Step 5 후 갱신) |
 | [09-data-model.md](09-data-model.md) | 데이터 모델 상세 | ✅ |
 | [10-engineering-notes.md](10-engineering-notes.md) | 개념 정리 + 면접 대비 | ✅ |
@@ -62,7 +62,8 @@
 | [007](07-decisions/ADR-007-frontend-integration.md) | rewrites 프록시 · localStorage 토큰 | 토큰 권한 크기에 맞춘 방어 수준 |
 | [008](07-decisions/ADR-008-observability.md) | 상관관계 ID · 구조화 로그 | 발급 주체는 게이트웨이 하나, OTel은 아직 과함 |
 | [009](07-decisions/ADR-009-training-stack.md) | PyTorch+ONNX · FairFace · 언더톤 우선 | CNN은 대조군 — 라이선스가 데이터를 골랐다 |
-| [010](07-decisions/ADR-010-undertone-recalibration.md) | 언더톤 축 재보정 | 교과서를 제약으로, 실측을 목적함수로 — 라운드 2 검증 대기 |
+| [010](07-decisions/ADR-010-undertone-recalibration.md) | 언더톤 축 재보정 | 교과서를 제약으로, 실측을 목적함수로 — 라운드 2에서 유지 확정 |
+| [011](07-decisions/ADR-011-admin-curation.md) | 관리자 부트스트랩 · 큐레이션 편집 | 자격증명을 저장소에 남기지 않는다 |
 
 ---
 

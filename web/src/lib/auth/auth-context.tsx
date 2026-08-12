@@ -42,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       expiresAt: response.expiresAt,
       userId: response.userId,
       displayName: response.displayName,
+      role: response.role,
     };
     saveAuth(stored);
     setAuth(stored);

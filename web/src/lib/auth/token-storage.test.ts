@@ -16,6 +16,7 @@ function validAuth(overrides: Partial<StoredAuth> = {}): StoredAuth {
     expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
     userId: "user-1",
     displayName: "테스트",
+    role: "USER",
     ...overrides,
   };
 }

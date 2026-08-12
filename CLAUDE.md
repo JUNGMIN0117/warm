@@ -180,7 +180,8 @@ docs/
  │                            004 파이프라인 순서, 005 서비스 경계,
  │                            006 빌드·모듈·Boot 4, 007 프론트 통합,
  │                            008 관측성, 009 학습 스택,
- │                            010 언더톤 재보정 — 라운드 2 검증 대기)
+ │                            010 언더톤 재보정 — 라운드 2 유지 확정,
+ │                            011 관리자 부트스트랩·큐레이션 편집)
  └ 08-retrospective.md   원본 대비 회고 (완료 — Step 5 실행 후 §7 갱신)
 ```
 
@@ -221,7 +222,7 @@ cd ml-service && uv run ruff check . && uv run mypy app/ tests/ scripts/
 백엔드는 Docker가 켜져 있어야 한다 (Testcontainers).
 
 ```bash
-cd backend && ./mvnw verify                                        # 141 tests
+cd backend && ./mvnw verify                                        # 158 tests
 ```
 
 프론트:

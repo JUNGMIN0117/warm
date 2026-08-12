@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -44,10 +45,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain chain) throws ServletException, IOException {
 
         bearerToken(request)
-                .flatMap(jwtService::extractUserId)
-                .ifPresent(userId -> {
+                .flatMap(jwtService::extractPrincipal)
+                .ifPresent(principal -> {
+                    // 권한은 토큰의 role 클레임에서 온다 — hasRole("ADMIN")이
+                    // 검사하는 것이 바로 이 authorities다.
                     var authentication = new UsernamePasswordAuthenticationToken(
-                            userId, null, List.of());
+                            principal.userId(), null,
+                            List.of(new SimpleGrantedAuthority(
+                                    "ROLE_" + principal.role().code())));
                     authentication.setDetails(
                             new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
