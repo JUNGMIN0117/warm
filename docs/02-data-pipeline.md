@@ -1,0 +1,125 @@
+# 02. 데이터 파이프라인 — 수집·라벨링·학습·평가
+
+[ADR-002](07-decisions/ADR-002-data-strategy.md)가 정한 3단계 전략의 실행 문서입니다. Phase 1(규칙 엔진)은 Step 0~2에서 끝났고, 이 문서는 **Phase 2(pseudo-label CNN 학습)와 Phase 3(수동 검증셋 평가)** 를 다룹니다. 도구 선택의 근거는 [ADR-009](07-decisions/ADR-009-training-stack.md)에 있습니다.
+
+한 문장 요약: **규칙 엔진이 라벨을 만들고, CNN이 그것을 배우고, 사람이 만든 검증셋에서 둘을 겨루게 한다.**
+
+---
+
+## 1. 데이터 소스 — 무엇을 쓰고 무엇을 안 쓰나
+
+학습용 얼굴 이미지는 **FairFace**를 권장합니다. 선택 기준은 성능이 아니라 **라이선스와 구성의 명확성**이었습니다.
+
+| 후보 | 라이선스 | 판단 |
+|---|---|---|
+| **FairFace** ✅ | CC BY 4.0 | 상업 이용까지 허용되는 명확한 라이선스. 인종 균형을 맞춰 구성되어 피부톤 분포가 넓다 — 퍼스널 컬러 문제에 중요한 성질 |
+| UTKFace | 비상업 연구 한정 | 포트폴리오는 회색지대라 회피 |
+| CelebA | 연구 한정 + 재배포 금지 | 동일 |
+| FFHQ | 이미지별 라이선스 상이 | 7만 장의 개별 출처를 검증할 수 없음 |
+| 직접 크롤링 | 각 이미지 저작권·초상권 | **라벨로 쓰지 않는다** (ADR-002). 원본 방식의 정성 재현용으로만 |
+
+다운로드는 [FairFace 저장소](https://github.com/joojs/fairface)의 안내를 따릅니다 (Google Drive 배포, `fairface-img-margin125-trainval.zip` 권장 — margin 1.25 버전이 얼굴 주변 여유가 있어 우리 검출 파이프라인과 잘 맞습니다). **이미지·라벨·가중치는 어떤 것도 git에 커밋하지 않습니다** — `.gitignore`가 `data/`, `*.pt`, `*.onnx`, `reports/`를 막고 있고, 특히 `reports/`는 Grad-CAM 오버레이에 실제 얼굴이 담기기 때문입니다.
+
+FairFace의 인종·성별·나이 라벨은 **쓰지 않습니다.** 우리가 필요한 것은 얼굴 이미지뿐이고, 라벨은 규칙 엔진이 새로 만듭니다.
+
+---
+
+## 2. Phase 2 실행 — 세 명령
+
+```bash
+cd ml-service && uv sync --group train
+```
+
+**① Pseudo-label 생성** — 이미지 폴더 전체에 전처리 파이프라인 + 규칙 엔진을 돌립니다.
+
+```bash
+uv run python scripts/generate_pseudo_labels.py --images data/fairface/train --out data/pseudo
+```
+
+산출물: `labels.csv`(계절·언더톤·신뢰도·측정값), `crops/`(얼굴 크롭 128²), `masked/`(피부 외 어둡게 — 원본 2022 방식), `skipped.csv`(탈락 목록과 사유).
+
+`skipped.csv`를 버리지 않는 것이 중요합니다. 얼굴 검출이 특정 조건(측면, 저조도, 특정 피부톤)에서 계통적으로 실패하면 **데이터셋이 조용히 편향**되는데, 탈락 목록이 있어야 그것이 보입니다.
+
+**② CNN 학습**
+
+```bash
+uv run python scripts/train_cnn.py --data data/pseudo --target undertone --variant crop
+```
+
+- `--target undertone`(기본): 웜/쿨 2분류 — 원본(2022)이 푼 문제와 같아 비교가 공정합니다. `season`으로 4분류도 가능합니다.
+- `--variant crop | masked`: §4의 실험 설계 참조.
+- 산출물: `models/cnn_{target}_{variant}.pt` + `.meta.json`(학습 조건 기록) + `.onnx`(서빙이 결정되면 Java/DJL로 가져갈 중립 포맷).
+
+**③ 평가 + Grad-CAM**
+
+```bash
+uv run python scripts/evaluate_models.py --data data/pseudo \
+    --model models/cnn_undertone_crop.pt --gradcam 12
+```
+
+`reports/eval_*.json`에 pseudo 일치율·ECE·혼동 행렬이, `reports/gradcam/`에 히트맵 오버레이가 남습니다.
+
+---
+
+## 3. "일치율"이라는 단어를 쓰는 이유
+
+이 파이프라인에서 CNN의 val 성능은 **규칙 엔진과의 일치율**이지 정확도가 아닙니다. 라벨을 만든 것이 규칙 엔진이므로, 일치율 100%는 "규칙 엔진을 완벽히 복제했다"는 뜻일 뿐입니다. 코드·리포트·메타 파일이 전부 `pseudo_agreement`라는 이름을 쓰고 "절대 정확도 아님"을 명기하는 이유입니다.
+
+절대 정확도는 Phase 3의 수동 검증셋에서만 말할 수 있습니다 (CLAUDE.md 금지 사항과 같은 원칙).
+
+---
+
+## 4. P2 실험 설계 — 입력 변형 두 가지
+
+원본 보고서의 우려는 *"얼굴의 윤곽이 학습될 수도 있다"* 였습니다. 이를 관찰 가능한 실험으로 바꿉니다.
+
+| 변형 | 입력 | 검증하려는 것 |
+|---|---|---|
+| `crop` | 얼굴 크롭 그대로 (윤곽·배경 포함) | 원본의 우려가 재현되는가 — Grad-CAM이 윤곽·배경에서 달아오르면 재현 |
+| `masked` | 피부 외 픽셀을 어둡게 (원본 2022 방식) | 마스킹이 실제로 공간 정보 누출을 줄이는가 |
+
+같은 데이터, 같은 구조, 같은 시드로 두 변형을 학습한 뒤 **Grad-CAM 히트맵을 나란히 놓는 것**이 P2 검증의 산출물입니다. 모델 구조가 원본과 같은 급(Conv 64→128→256→256)인 것도 의도입니다 — 현대적 아키텍처로 바꾸면 "원본 방식이 무엇을 학습하는가"라는 질문 자체가 바뀝니다.
+
+Grad-CAM은 라이브러리 없이 훅 두 개로 직접 구현했습니다(`evaluate_models.py`). "모델이 어디를 봤는가"를 주장하는 코드는 안이 보여야 신뢰할 수 있습니다.
+
+---
+
+## 5. Phase 3 — 수동 검증셋 절차
+
+이 단계만은 자동화할 수 없습니다. 사람(사용자)이 200~300장을 직접 라벨링합니다.
+
+**형식** — `data/manual_labels.csv`:
+
+```csv
+filename,label
+img_0001.png,warm
+img_0002.png,cool
+```
+
+`filename`은 `generate_pseudo_labels.py`가 만든 크롭 파일명과 일치해야 합니다. 평가는 `--manual data/manual_labels.csv`로 겁니다 — 그때만 리포트에 `rule_engine_accuracy`와 `cnn_accuracy`가 나란히 실립니다.
+
+**라벨링 지침**
+
+- 규칙 엔진의 판정을 **보기 전에** 라벨링합니다. 보고 나면 앵커링됩니다.
+- 확신이 없는 사진은 라벨링하지 말고 건너뜁니다 — 애매한 정답지는 두 모델 모두에게 잡음입니다.
+- **동일 인물의 다른 조명 사진**을 의도적으로 포함합니다. "조명이 바뀌어도 판정이 같은가"가 원본(P1)이 실패한 지점이라, 이 쌍들이 가장 값진 검증 표본입니다.
+
+---
+
+## 6. 종단 검증 기록 (2026-08-11)
+
+실데이터 확보 전에 파이프라인 전체가 동작함을 합성 얼굴로 증명했습니다.
+
+- 합성 얼굴 300장(피부색을 넓게 샘플링) → pseudo-label **175장 성공, 125장 탈락**(전부 `NoFaceDetectedError` — MediaPipe가 일부 색 조합의 도형 얼굴을 거부)
+- 라벨 분포가 4계절·양 언더톤을 모두 덮음 (warm 91 / cool 84)
+- 학습 5 epoch(CPU) → ONNX 내보내기까지 완료, 평가 리포트·Grad-CAM 산출 확인
+- Grad-CAM이 얼굴 영역에서 달아오르고 배경에서 식는 것을 확인 — 도구가 의도대로 동작
+
+이 실행의 수치(일치율 0.71 등)는 **파이프라인 점검용**입니다. 175장짜리 합성 데이터의 수치에는 어떤 의미도 부여하지 않습니다.
+
+## 7. 남은 것
+
+- [ ] FairFace 다운로드 및 Phase 2 실행 (수 GB, 사용자 환경에서)
+- [ ] `crop` vs `masked` Grad-CAM 비교 리포트 → P2 결론을 [08-retrospective.md](08-retrospective.md)에
+- [ ] 수동 검증셋 200~300장 라벨링 (사용자)
+- [ ] Phase 3 평가 → 그때 처음으로 정확도를 문서에 적는다

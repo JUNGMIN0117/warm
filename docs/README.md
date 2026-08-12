@@ -14,7 +14,7 @@
 
 1. **[01-architecture.md](01-architecture.md)** — 경계·계층·데이터 흐름·오류 처리 전략
 2. **[09-data-model.md](09-data-model.md)** — 스키마 설계 근거, 인덱스, 제약조건
-3. **[07-decisions/](07-decisions/)** — ADR 8건. 각 결정의 검토 과정
+3. **[07-decisions/](07-decisions/)** — ADR 9건. 각 결정의 검토 과정
 4. **[05-api-spec.md](05-api-spec.md)** — API 계약과 오류 코드
 
 ### 📚 "이 프로젝트를 공부하고 싶다 / 면접을 준비한다"
@@ -35,12 +35,12 @@
 |---|---|---|
 | [00-overview.md](00-overview.md) | 원본 프로젝트 분석과 재구축 목표 (P1·P2·P3) | ✅ |
 | [01-architecture.md](01-architecture.md) | 시스템 구조 — 경계·계층·데이터·오류 흐름 | ✅ |
-| 02-data-pipeline.md | 데이터 수집·라벨링 전략 | Step 5 |
+| [02-data-pipeline.md](02-data-pipeline.md) | 데이터 수집·pseudo-label 학습·P2 실험 설계 | ✅ |
 | [03-color-theory.md](03-color-theory.md) | 색채 이론과 분류 알고리즘 | ✅ |
 | [04-preprocessing.md](04-preprocessing.md) | 전처리 파이프라인 | ✅ |
 | [05-api-spec.md](05-api-spec.md) | API 명세 (게이트웨이 + ML 서비스) | ✅ |
 | [06-frontend.md](06-frontend.md) | 프론트엔드 UX 설계 의도 | ✅ |
-| [07-decisions/](07-decisions/) | ADR 8건 | ✅ |
+| [07-decisions/](07-decisions/) | ADR 9건 | ✅ |
 | 08-retrospective.md | 원본 대비 개선점 회고 | Step 6 |
 | [09-data-model.md](09-data-model.md) | 데이터 모델 상세 | ✅ |
 | [10-engineering-notes.md](10-engineering-notes.md) | 개념 정리 + 면접 대비 | ✅ |
@@ -61,6 +61,7 @@
 | [006](07-decisions/ADR-006-build-and-modules.md) | Maven · 3모듈 · Boot 4.1 | 의존 방향을 컴파일이 강제 |
 | [007](07-decisions/ADR-007-frontend-integration.md) | rewrites 프록시 · localStorage 토큰 | 토큰 권한 크기에 맞춘 방어 수준 |
 | [008](07-decisions/ADR-008-observability.md) | 상관관계 ID · 구조화 로그 | 발급 주체는 게이트웨이 하나, OTel은 아직 과함 |
+| [009](07-decisions/ADR-009-training-stack.md) | PyTorch+ONNX · FairFace · 언더톤 우선 | CNN은 대조군 — 라이선스가 데이터를 골랐다 |
 
 ---
 
