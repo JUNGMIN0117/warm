@@ -9,7 +9,7 @@
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-6DB33F)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791)
-![Tests](https://img.shields.io/badge/tests-277%20passing-success)
+![Tests](https://img.shields.io/badge/tests-294%20passing-success)
 
 ---
 
@@ -164,6 +164,7 @@ erDiagram
         varchar password_hash "BCrypt strength 12"
         varchar display_name
         timestamptz created_at
+        varchar role "CHECK: USER | ADMIN"
     }
 
     analyses {
@@ -370,8 +371,9 @@ CI(GitHub Actions)가 푸시·PR마다 네 단계를 돕니다 — 서비스별 
 | 파이프라인·API (Python) | 합성 이미지, TestClient, 관측성 미들웨어 | 77 |
 | 영속화 통합 | **PostgreSQL 16** | 17 |
 | 종단 통합 | **PostgreSQL + Redis + 전체 컨텍스트** | 16 |
+| 관리자·인가 경계 | 401/403/200, 부트스트랩 멱등, 교체 저장 왕복 | 17 |
 | 프론트 계약 (TypeScript) | jsdom — 오류 매핑 · 토큰 보관 · 확률/경계 표시 | 25 |
-| | **합계** | **277** |
+| | **합계** | **294** |
 
 **실존 인물 사진이 저장소에 없습니다.** 파이프라인 테스트는 합성 얼굴(피부색 타원 + 도형)로 검증합니다. 눈과 입술을 **일부러 피부색으로 칠해** 색·밝기로는 걸러질 수 없게 만들고, 오직 랜드마크 폴리곤 제외만이 그 픽셀을 제거할 수 있음을 증명합니다.
 
@@ -393,6 +395,7 @@ Testcontainers가 Docker를 요구하므로 Docker가 꺼져 있으면 통합 �
 | [008](docs/07-decisions/ADR-008-observability.md) | 상관관계 ID는 게이트웨이가 발급 · ECS 구조화 로그 | 세 서비스 로그를 요청 하나로, OTel은 아직 과함 |
 | [009](docs/07-decisions/ADR-009-training-stack.md) | PyTorch+ONNX · FairFace · 언더톤 우선 | CNN은 제품이 아니라 대조군 — 라이선스가 데이터를 골랐다 |
 | [010](docs/07-decisions/ADR-010-undertone-recalibration.md) | 언더톤 축 재보정 (h° → 명도 보정 노란기) | 데이터 최적값이 교과서 사례를 뒤집자, 교과서를 제약으로 실측을 목적함수로 |
+| [011](docs/07-decisions/ADR-011-admin-curation.md) | 관리자 — 환경변수 부트스트랩 · 큐레이션 편집 | admin/admin 하드코딩 대신 JWT 키와 같은 원칙 |
 
 ---
 
@@ -465,6 +468,7 @@ personal-color-ai/
 - [x] **Step 4** — Next.js 프론트엔드: 업로드/웹캠 · 하이브리드 파이프라인 시각화 · 3축 게이지 · 인증/이력
 - [x] **Step 5 (도구)** — pseudo-label 생성 · CNN 학습(PyTorch→ONNX) · 평가(일치율·ECE) · Grad-CAM, 합성 데이터로 종단 검증
 - [x] **Step 5 (실행)** — FairFace 학습 · 수동 검증셋 평가 · **P2 재현 확인**(crop 모델 주목의 72%가 피부 밖) → [상세](docs/02-data-pipeline.md)
+- [x] **관리자 큐레이션 편집** — 환경변수 부트스트랩 계정([ADR-011](docs/07-decisions/ADR-011-admin-curation.md)) · `/admin` 화면 · ADR-005의 "재배포 없이 갱신"을 실제 기능으로
 - [x] **캘리브레이션 사이클 1회 완주** — 측정(63.2%) → 진단(h° 판별력 한계) → 재설계(b\*+L\*, [ADR-010](docs/07-decisions/ADR-010-undertone-recalibration.md)) → 새 검증셋 A/B(72.7% vs 69.1%, n=55, 통계적 동률·우세 경향 → 유지)
 - [x] **Step 6a** — 관측성: 상관관계 ID 전파(프론트→Spring→FastAPI) · 구조화 로그(ECS/JSON) · 요청 완료 로그
 - [x] **Step 6b (릴리스)** — main 머지 시 GHCR 이미지 게시 (종단 검증 통과분만, sha 태그로 재현 가능). *실서버 배포는 하지 않기로 결정*

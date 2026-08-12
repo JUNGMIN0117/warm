@@ -20,6 +20,7 @@ erDiagram
         varchar password_hash "BCrypt strength 12"
         varchar display_name
         timestamptz created_at
+        varchar role "CHECK: USER | ADMIN (V4, ADR-011)"
     }
 
     analyses {

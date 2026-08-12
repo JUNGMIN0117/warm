@@ -28,17 +28,21 @@ public class UserEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(nullable = false, length = 16)
+    private String role;
+
     protected UserEntity() {
         // JPA 전용
     }
 
     UserEntity(UUID id, String email, String passwordHash, String displayName,
-               Instant createdAt) {
+               Instant createdAt, String role) {
         this.id = id;
         this.email = email;
         this.passwordHash = passwordHash;
         this.displayName = displayName;
         this.createdAt = createdAt;
+        this.role = role;
     }
 
     public UUID getId() {
@@ -59,5 +63,9 @@ public class UserEntity {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public String getRole() {
+        return role;
     }
 }

@@ -51,5 +51,6 @@ public final class AuthDtos {
             String accessToken,
             Instant expiresAt,
             String userId,
-            String displayName) {}
+            String displayName,
+            String role) {}
 }

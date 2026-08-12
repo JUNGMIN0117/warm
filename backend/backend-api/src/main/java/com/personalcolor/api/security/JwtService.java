@@ -1,5 +1,6 @@
 package com.personalcolor.api.security;
 
+import com.personalcolor.domain.user.Role;
 import com.personalcolor.domain.user.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -53,6 +54,10 @@ public class JwtService {
                 // 토큰에 담긴 값이 개인정보인 것도 피하고 싶다.
                 .subject(user.id().toString())
                 .claim("name", user.displayName())
+                // 역할을 토큰에 싣는다 — 요청마다 DB를 보지 않는 무상태
+                // 원칙의 연장이다. 대가: 승격/강등이 다음 로그인부터
+                // 반영된다. 폐기 목록을 안 두는 것과 같은 트레이드오프다.
+                .claim("role", user.role().code())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiresAt))
                 .signWith(key)
@@ -69,6 +74,16 @@ public class JwtService {
      * 구분해서 응답에 담으면 공격자에게 힌트가 된다.
      */
     public Optional<UUID> extractUserId(String token) {
+        return extractPrincipal(token).map(TokenPrincipal::userId);
+    }
+
+    /**
+     * 토큰에서 사용자 id와 역할을 꺼낸다.
+     *
+     * <p>role 클레임이 없는 토큰(역할 도입 전 발급분)은 USER로 취급한다 —
+     * 오래된 토큰이 관리자 권한을 얻는 방향의 실수가 구조적으로 불가능하다.
+     */
+    public Optional<TokenPrincipal> extractPrincipal(String token) {
         try {
             Claims claims = Jwts.parser()
                     .verifyWith(key)
@@ -78,11 +93,16 @@ public class JwtService {
                     .parseSignedClaims(token)
                     .getPayload();
 
-            return Optional.of(UUID.fromString(claims.getSubject()));
+            String roleClaim = claims.get("role", String.class);
+            Role role = roleClaim == null ? Role.USER : Role.fromCode(roleClaim);
+            return Optional.of(new TokenPrincipal(UUID.fromString(claims.getSubject()), role));
         } catch (JwtException | IllegalArgumentException e) {
             return Optional.empty();
         }
     }
+
+    /** 토큰이 증명하는 주체 — id와 역할. */
+    public record TokenPrincipal(UUID userId, Role role) {}
 
     /** 발급된 토큰과 만료 시각. 클라이언트가 재로그인 시점을 알 수 있게 함께 준다. */
     public record IssuedToken(String value, Instant expiresAt) {}

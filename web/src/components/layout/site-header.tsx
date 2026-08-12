@@ -58,6 +58,17 @@ export function SiteHeader() {
             >
               이력
             </Link>
+            {auth?.role === "ADMIN" && (
+              <Link
+                href="/admin"
+                className={cn(
+                  "rounded-md px-3 py-1.5 hover:bg-muted",
+                  pathname.startsWith("/admin") && "bg-muted font-medium",
+                )}
+              >
+                관리
+              </Link>
+            )}
           </nav>
         </div>
         <div className="flex items-center gap-2">

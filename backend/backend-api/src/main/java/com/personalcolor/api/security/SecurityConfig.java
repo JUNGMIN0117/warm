@@ -52,6 +52,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/seasons/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
+                        // 관리자 전용 — 큐레이션 편집 (ADR-011)
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         // 나머지(이력 조회 등)는 인증 필요
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

@@ -21,7 +21,8 @@ public record User(
         String email,
         String displayName,
         String passwordHash,
-        Instant createdAt) {
+        Instant createdAt,
+        Role role) {
 
     public User {
         if (id == null) {
@@ -30,9 +31,23 @@ public record User(
         if (createdAt == null) {
             throw new IllegalArgumentException("createdAt이 없습니다.");
         }
+        if (role == null) {
+            throw new IllegalArgumentException("role이 없습니다.");
+        }
         email = Email.normalize(email);
         requireText(displayName, "displayName");
         requireText(passwordHash, "passwordHash");
+    }
+
+    /** 일반 가입자 생성. 관리자는 부트스트랩 경로로만 만들어진다 (ADR-011). */
+    public User(UUID id, String email, String displayName, String passwordHash,
+                Instant createdAt) {
+        this(id, email, displayName, passwordHash, createdAt, Role.USER);
+    }
+
+    /** 역할만 바꾼 사본. 부트스트랩이 기존 계정을 승격할 때 쓴다. */
+    public User withRole(Role newRole) {
+        return new User(id, email, displayName, passwordHash, createdAt, newRole);
     }
 
     private static void requireText(String value, String name) {

@@ -2,9 +2,11 @@ import { requestJson, requestMultipart } from "./client";
 import type {
   AnalysisResponse,
   AuthResponse,
+  CurationUpdateRequest,
   HistoryItem,
   LoginRequest,
   RegisterRequest,
+  SeasonView,
 } from "./types";
 
 /**
@@ -34,6 +36,21 @@ export function fetchHistory(limit = 20): Promise<HistoryItem[]> {
 
 export function fetchAnalysis(id: string): Promise<AnalysisResponse> {
   return requestJson<AnalysisResponse>(`/api/v1/analyses/${encodeURIComponent(id)}`);
+}
+
+export function fetchSeasons(): Promise<SeasonView[]> {
+  return requestJson<SeasonView[]>("/api/v1/seasons");
+}
+
+/** 큐레이션 교체 (관리자 전용 — 서버가 hasRole(ADMIN)로 지킨다). */
+export function updateSeasonCuration(
+  code: string,
+  body: CurationUpdateRequest,
+): Promise<SeasonView> {
+  return requestJson<SeasonView>(`/api/v1/admin/seasons/${encodeURIComponent(code)}`, {
+    method: "PUT",
+    body,
+  });
 }
 
 export function register(body: RegisterRequest): Promise<AuthResponse> {

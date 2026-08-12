@@ -5,6 +5,7 @@ import com.personalcolor.domain.analysis.ViewAnalysisHistory;
 import com.personalcolor.domain.analysis.port.AnalysisRepository;
 import com.personalcolor.domain.analysis.port.PersonalColorAnalyzer;
 import com.personalcolor.domain.season.BrowseSeasonCatalog;
+import com.personalcolor.domain.season.UpdateSeasonCuration;
 import com.personalcolor.domain.season.port.SeasonProfileRepository;
 import com.personalcolor.domain.user.AuthenticateUser;
 import com.personalcolor.domain.user.RegisterUser;
@@ -52,6 +53,11 @@ public class UseCaseConfiguration {
     @Bean
     public BrowseSeasonCatalog browseSeasonCatalog(SeasonProfileRepository profiles) {
         return new BrowseSeasonCatalog(profiles);
+    }
+
+    @Bean
+    public UpdateSeasonCuration updateSeasonCuration(SeasonProfileRepository profiles) {
+        return new UpdateSeasonCuration(profiles);
     }
 
     @Bean

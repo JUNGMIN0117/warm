@@ -286,6 +286,7 @@ cd ml-service && uv run uvicorn app.api.main:app --reload --port 8000
 | `GET /api/v1/analyses/{id}` | 필요 | 200 |
 | `GET /api/v1/seasons` | 불필요 | 200 |
 | `GET /api/v1/seasons/{code}` | 불필요 | 200 |
+| `PUT /api/v1/admin/seasons/{code}` | **ADMIN** | 200 |
 | `GET /actuator/health` | 불필요 | 200 |
 
 토큰은 `Authorization: Bearer <token>` 헤더로 보냅니다. **잘못된 토큰은 401이 아니라 익명으로 취급**됩니다 — 익명 분석을 막지 않기 위해서입니다.
@@ -303,7 +304,8 @@ cd ml-service && uv run uvicorn app.api.main:app --reload --port 8000
   "accessToken": "eyJhbGciOi...",
   "expiresAt": "2026-08-10T18:00:00Z",
   "userId": "0b6f...",
-  "displayName": "정민"
+  "displayName": "정민",
+  "role": "USER"
 }
 ```
 
@@ -384,6 +386,22 @@ ML 서비스와 같은 `{code, message, detail}` 형태입니다.
 | `CATALOG_UNAVAILABLE` · `INTERNAL_ERROR` | 500 | 서버 문제 |
 
 422 계열의 `message`는 **ML 서비스가 쓴 문구를 그대로 전달**합니다. 실패 원인을 가장 잘 아는 쪽이 측정기이므로 안내도 그쪽이 구체적입니다.
+
+### `PUT /api/v1/admin/seasons/{code}` (관리자)
+
+큐레이션(키워드·설명·팔레트·팁)을 **통째로 교체**합니다 — 부분 수정이 아닙니다. 순서가 곧 데이터이기 때문입니다. 라벨과 이모지는 계절의 표기 정체성이라 편집 대상이 아닙니다. 응답은 공개 조회와 같은 `SeasonView`입니다.
+
+```json
+{
+  "keywords": ["깊은", "따뜻한"],
+  "description": "…",
+  "bestColors": [{ "name": "머스타드", "hex": "#D4A017" }, "… 최소 6개"],
+  "worstColors": ["… 최소 3개"],
+  "stylingTips": ["…"]
+}
+```
+
+관리자 계정은 가입 API로 만들 수 없고 기동 시 환경변수(`PCAI_ADMIN_EMAIL`/`PCAI_ADMIN_PASSWORD`) 부트스트랩으로만 생깁니다 (ADR-011). 로그인 응답의 `role`이 `ADMIN`인 토큰만 통과합니다 — 익명은 401, 일반 사용자는 403. 편집은 캐시 무효화 없이 즉시 반영됩니다: Redis에는 측정값만 캐시되고 큐레이션은 응답 조립 시 DB에서 조인되기 때문입니다 (ADR-005의 경계가 주는 이득).
 
 ### 상관관계 ID (`X-Request-Id`)
 

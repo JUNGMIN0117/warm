@@ -116,4 +116,15 @@ export interface AuthResponse {
   expiresAt: string;
   userId: string;
   displayName: string;
+  /** 서버가 알려주는 역할 — JWT를 디코드하지 않는 원칙의 연장. UI 노출 판단에만 쓴다. */
+  role: "USER" | "ADMIN";
+}
+
+/** 큐레이션 편집 요청 (관리자). 게이트웨이 AdminDtos와 대응. */
+export interface CurationUpdateRequest {
+  keywords: string[];
+  description: string;
+  bestColors: ColorView[];
+  worstColors: ColorView[];
+  stylingTips: string[];
 }

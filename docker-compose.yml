@@ -91,6 +91,10 @@ services:
       # 컨테이너에서만 구조화(ECS JSON) 로그를 켠다. 로컬은 텍스트가
       # 읽기 좋고, 수집기 앞에서는 JSON이어야 필드 검색이 된다 (ADR-008).
       LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
+      # 관리자 부트스트랩 (ADR-011). 비어 있으면 관리자 기능만 꺼진 채
+      # 정상 기동한다 — JWT 키와 달리 필수가 아니다.
+      PCAI_ADMIN_EMAIL: ${PCAI_ADMIN_EMAIL:-}
+      PCAI_ADMIN_PASSWORD: ${PCAI_ADMIN_PASSWORD:-}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     healthcheck:

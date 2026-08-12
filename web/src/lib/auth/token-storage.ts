@@ -18,6 +18,8 @@ export interface StoredAuth {
   expiresAt: string;
   userId: string;
   displayName: string;
+  /** UI 노출 판단용. 실제 인가는 항상 서버(hasRole)가 한다 — 이 값을 조작해도 API는 403. */
+  role: "USER" | "ADMIN";
 }
 
 function isStoredAuth(value: unknown): value is StoredAuth {
@@ -27,7 +29,8 @@ function isStoredAuth(value: unknown): value is StoredAuth {
     typeof v.accessToken === "string" &&
     typeof v.expiresAt === "string" &&
     typeof v.userId === "string" &&
-    typeof v.displayName === "string"
+    typeof v.displayName === "string" &&
+    (v.role === "USER" || v.role === "ADMIN")
   );
 }
 
