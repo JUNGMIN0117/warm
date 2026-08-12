@@ -392,6 +392,7 @@ Testcontainers가 Docker를 요구하므로 Docker가 꺼져 있으면 통합 �
 | [007](docs/07-decisions/ADR-007-frontend-integration.md) | rewrites 프록시 · localStorage 토큰 | CORS 제거, 토큰 권한 크기에 맞춘 방어 수준 |
 | [008](docs/07-decisions/ADR-008-observability.md) | 상관관계 ID는 게이트웨이가 발급 · ECS 구조화 로그 | 세 서비스 로그를 요청 하나로, OTel은 아직 과함 |
 | [009](docs/07-decisions/ADR-009-training-stack.md) | PyTorch+ONNX · FairFace · 언더톤 우선 | CNN은 제품이 아니라 대조군 — 라이선스가 데이터를 골랐다 |
+| [010](docs/07-decisions/ADR-010-undertone-recalibration.md) | 언더톤 축 재보정 (h° → 명도 보정 노란기) | 데이터 최적값이 교과서 사례를 뒤집자, 교과서를 제약으로 실측을 목적함수로 |
 
 ---
 
