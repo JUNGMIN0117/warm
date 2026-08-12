@@ -293,6 +293,14 @@ docker compose up --build --wait
 curl -F "image=@face.jpg" http://127.0.0.1:8080/api/v1/analyses
 ```
 
+### 빌드 없이 실행 (게시 이미지)
+
+main에 머지될 때마다 CI가 **종단 기동까지 통과한 커밋만** 이미지 3종을 GHCR에 게시합니다 (`latest` + `sha-<커밋>` 태그 — 정확한 커밋의 조합을 재현할 수 있습니다).
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d --no-build --pull always
+```
+
 ### 왜 JWT 키를 직접 만들어야 하나
 
 서명 키에 **기본값을 두지 않았습니다.** 값이 없으면 게이트웨이가 기동을 거부합니다. 기본값은 그대로 배포되고, 소스가 공개된 저장소에서 그것은 누구나 토큰을 위조할 수 있다는 뜻이기 때문입니다.
@@ -457,7 +465,8 @@ personal-color-ai/
 - [x] **Step 5 (도구)** — pseudo-label 생성 · CNN 학습(PyTorch→ONNX) · 평가(일치율·ECE) · Grad-CAM, 합성 데이터로 종단 검증
 - [ ] **Step 5 (실행)** — FairFace 실데이터 학습 · 수동 검증셋 라벨링 · Phase 3 비교 평가 (P2 결론)
 - [x] **Step 6a** — 관측성: 상관관계 ID 전파(프론트→Spring→FastAPI) · 구조화 로그(ECS/JSON) · 요청 완료 로그
-- [ ] **Step 6b** — 배포 파이프라인 · 회고
+- [x] **Step 6b (릴리스)** — main 머지 시 GHCR 이미지 게시 (종단 검증 통과분만, sha 태그로 재현 가능). *실서버 배포는 하지 않기로 결정*
+- [ ] **Step 6b (회고)** — 08-retrospective.md
 
 ---
 

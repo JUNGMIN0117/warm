@@ -122,7 +122,8 @@ FastAPI는 **완전 무상태**를 유지한다. DB·인증·세션 금지. 입�
   - `CorrelationIdRelay`는 `.block()` 덕에 MDC를 읽을 수 있다 — 완전 리액티브 전환 시 Reactor Context로
   - 구조화 로그는 컨테이너에서만: Spring `LOGGING_STRUCTURED_FORMAT_CONSOLE=ecs`(Boot 4 내장), Python `PCAI_LOG_FORMAT=json`(표준 lib 포매터)
   - 헬스체크 프로브 로그는 DEBUG로 — INFO 도배 방지
-- [ ] **Step 6b** — 배포 파이프라인, 회고
+- [x] **Step 6b (릴리스)** — GHCR 이미지 게시. release 잡은 compose 종단 통과 후 main에서만. **실서버 배포는 안 하기로 결정**(사용자, 2026-08-12). 게시 이미지 실행: `docker-compose.ghcr.yml` 오버레이
+- [ ] **Step 6b (회고)** — 08-retrospective.md (P2 결론 이후 권장)
 
 각 Step 완료 시 README의 진행 상황 체크박스를 갱신한다.
 
