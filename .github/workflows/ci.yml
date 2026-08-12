@@ -44,7 +44,10 @@ jobs:
       - name: 의존성 설치
         # --frozen: 락파일과 다르면 조용히 갱신하지 않고 실패한다.
         # CI에서 의존성이 표류하면 "로컬은 되는데 CI만 깨지는" 상황이 생긴다.
-        run: uv sync --frozen
+        # --group train: 학습 스크립트(scripts/)도 mypy strict 대상이라
+        # torch가 있어야 한다 — 없으면 torch가 Any로 격하되어 로컬과
+        # CI의 검사 결과가 갈라진다. uv 캐시 덕에 재실행 비용은 작다.
+        run: uv sync --frozen --group train
 
       - name: 린트 (ruff)
         run: uv run ruff check .

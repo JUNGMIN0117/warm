@@ -31,6 +31,11 @@ dev = [
     # httpx 1.x를 쓰면 DeprecationWarning을 낸다.
     "httpx2>=0.29",
 ]
+train = [
+    "onnx>=1.16",
+    "onnxscript>=0.1",
+    "torch>=2.4",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -53,4 +58,12 @@ strict = true
 # 도메인 계층은 여전히 strict 전체 검사를 받는다.
 [[tool.mypy.overrides]]
 module = ["mediapipe.*"]
+ignore_missing_imports = true
+
+# torch는 py.typed를 제공하므로 오버라이드 없이 strict 검사를 받는다.
+# 단, CI가 train 그룹까지 설치해야 한다 (ci.yml: uv sync --group train).
+# 미설치 상태로 mypy를 돌리면 torch가 Any가 되어 "로컬은 통과, CI만
+# 실패"가 생긴다 — 환경을 갈라놓는 것보다 캐시된 설치가 싸다.
+[[tool.mypy.overrides]]
+module = ["onnx.*"]
 ignore_missing_imports = true

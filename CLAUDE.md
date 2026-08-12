@@ -110,7 +110,12 @@ FastAPI는 **완전 무상태**를 유지한다. DB·인증·세션 금지. 입�
   - `topTwoMargin < 0.15`면 경계 판정 안내 — 표현 기준이라 프론트 소유
   - standalone 출력은 `BUILD_STANDALONE=1`일 때만 (Windows+pnpm 심링크 EPERM)
   - Vitest 23개 — 계약 테스트 (오류 매핑·토큰 보관·확률/경계 표시)
-- [ ] **Step 5** — CNN 학습(pseudo-label) + 규칙 엔진 대비 평가 + Grad-CAM으로 P2 검증
+- [x] **Step 5 (도구)** — pseudo-label·학습·평가 하네스 (`ml-service/scripts/`)
+  - `generate_pseudo_labels.py`(규칙 엔진 → labels.csv + crop/masked 두 변형) → `train_cnn.py`(PyTorch, 원본급 SmallCnn, ONNX 내보내기) → `evaluate_models.py`(pseudo 일치율·ECE·Grad-CAM)
+  - **CNN은 대조군** (ADR-002·009). torch는 `train` 그룹 — 배포 이미지 미포함. CI는 `uv sync --group train`(아니면 mypy에서 torch가 Any로 격하되어 로컬·CI가 갈라짐)
+  - "정확도"라는 말 금지 — pseudo 기준 수치는 전부 **일치율(agreement)**. 절대 정확도는 Phase 3 수동 검증셋에서만
+  - 합성 300장으로 종단 검증 완료. Grad-CAM은 훅 직접 구현
+- [ ] **Step 5 (실행)** — FairFace 실데이터 학습(사용자 다운로드 필요) · crop vs masked Grad-CAM 비교(P2 결론) · 수동 검증셋 200~300장(사용자) · Phase 3 평가
 - [x] **Step 6a** — 관측성
   - 상관관계 ID: **게이트웨이가 발급**(`X-Request-Id`, 유효하면 수용), ml-service는 수신만. 프론트는 실패 화면에 "문의 코드"로 노출 (ADR-008)
   - Java는 MDC(+`finally` 정리 필수 — 스레드 재사용), Python은 contextvars(스레드풀 전파 때문에 threading.local 불가)
@@ -160,7 +165,7 @@ FastAPI는 **완전 무상태**를 유지한다. DB·인증·세션 금지. 입�
 docs/
  ├ 00-overview.md        원본 분석 + 재구축 목표 (완료)
  ├ 01-architecture.md    시스템 구조 (완료 — 경계·계층·데이터·오류 흐름)
- ├ 02-data-pipeline.md   데이터 수집·라벨링 (Step 5)
+ ├ 02-data-pipeline.md   데이터 수집·라벨링 (완료 — Phase 2/3 실행 절차·P2 실험 설계)
  ├ 03-color-theory.md    색채 이론·분류 알고리즘 (완료 — 도메인 변경 시 함께 갱신)
  ├ 04-preprocessing.md   마스킹 파이프라인 (완료 — 파이프라인 변경 시 함께 갱신)
  ├ 05-api-spec.md        엔드포인트 명세 (완료 — ML 서비스 + Spring 게이트웨이)
@@ -168,7 +173,7 @@ docs/
  ├ 07-decisions/         ADR (완료: 001 스택, 002 데이터, 003 분류범위,
  │                            004 파이프라인 순서, 005 서비스 경계,
  │                            006 빌드·모듈·Boot 4, 007 프론트 통합,
- │                            008 관측성)
+ │                            008 관측성, 009 학습 스택)
  └ 08-retrospective.md   원본 대비 개선점 (Step 6)
 ```
 

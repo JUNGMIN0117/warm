@@ -124,6 +124,7 @@ CachingAnalyzer                     캐시 히트면 아래로 내려가지 않�
 | MediaPipe | 1.0 | 478개 얼굴 랜드마크 → 눈·눈썹·입술 폴리곤 제외 가능 |
 | OpenCV | 5.0 | 색공간 변환, 마스킹 |
 | NumPy | 2.x | 색채 통계 |
+| PyTorch | 2.13 (`train` 그룹) | 대조군 CNN 학습·Grad-CAM. **배포 이미지에는 미포함** ([ADR-009](docs/07-decisions/ADR-009-training-stack.md)) |
 | uv | 0.12 | 락파일 기반 재현 가능 빌드 |
 | pytest · ruff · mypy(strict) | | |
 
@@ -382,6 +383,7 @@ Testcontainers가 Docker를 요구하므로 Docker가 꺼져 있으면 통합 �
 | [006](docs/07-decisions/ADR-006-build-and-modules.md) | Maven · 3모듈 · Boot 4.1 | 의존 방향을 컴파일이 강제 |
 | [007](docs/07-decisions/ADR-007-frontend-integration.md) | rewrites 프록시 · localStorage 토큰 | CORS 제거, 토큰 권한 크기에 맞춘 방어 수준 |
 | [008](docs/07-decisions/ADR-008-observability.md) | 상관관계 ID는 게이트웨이가 발급 · ECS 구조화 로그 | 세 서비스 로그를 요청 하나로, OTel은 아직 과함 |
+| [009](docs/07-decisions/ADR-009-training-stack.md) | PyTorch+ONNX · FairFace · 언더톤 우선 | CNN은 제품이 아니라 대조군 — 라이선스가 데이터를 골랐다 |
 
 ---
 
@@ -452,7 +454,8 @@ personal-color-ai/
 - [x] **Step 3** — Spring Boot 게이트웨이: 멀티모듈 · JWT · JPA · Redis · 서킷 브레이커
 - [x] **Compose · CI** — 네 서비스 컨테이너화, GitHub Actions 4단계 검증 *(Step 6에서 앞당김)*
 - [x] **Step 4** — Next.js 프론트엔드: 업로드/웹캠 · 하이브리드 파이프라인 시각화 · 3축 게이지 · 인증/이력
-- [ ] **Step 5** — CNN 학습 + 규칙 엔진 대비 평가 + Grad-CAM으로 P2 검증
+- [x] **Step 5 (도구)** — pseudo-label 생성 · CNN 학습(PyTorch→ONNX) · 평가(일치율·ECE) · Grad-CAM, 합성 데이터로 종단 검증
+- [ ] **Step 5 (실행)** — FairFace 실데이터 학습 · 수동 검증셋 라벨링 · Phase 3 비교 평가 (P2 결론)
 - [x] **Step 6a** — 관측성: 상관관계 ID 전파(프론트→Spring→FastAPI) · 구조화 로그(ECS/JSON) · 요청 완료 로그
 - [ ] **Step 6b** — 배포 파이프라인 · 회고
 
@@ -469,6 +472,7 @@ personal-color-ai/
 | [04-preprocessing.md](docs/04-preprocessing.md) | 전처리 파이프라인 |
 | [05-api-spec.md](docs/05-api-spec.md) | API 명세 (게이트웨이 + ML) |
 | [06-frontend.md](docs/06-frontend.md) | 프론트엔드 UX 설계 의도 — 하이브리드 시각화 · 경계 판정 표현 |
+| [02-data-pipeline.md](docs/02-data-pipeline.md) | 데이터 수집·pseudo-label 학습·P2 실험 설계 |
 | [09-data-model.md](docs/09-data-model.md) | 데이터 모델 상세 — 스키마 설계 근거 |
 | [10-engineering-notes.md](docs/10-engineering-notes.md) | **개념 정리 + 면접 대비** |
 | [07-decisions/](docs/07-decisions/) | ADR 6건 |
