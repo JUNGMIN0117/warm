@@ -123,7 +123,7 @@ FastAPI는 **완전 무상태**를 유지한다. DB·인증·세션 금지. 입�
   - 구조화 로그는 컨테이너에서만: Spring `LOGGING_STRUCTURED_FORMAT_CONSOLE=ecs`(Boot 4 내장), Python `PCAI_LOG_FORMAT=json`(표준 lib 포매터)
   - 헬스체크 프로브 로그는 DEBUG로 — INFO 도배 방지
 - [x] **Step 6b (릴리스)** — GHCR 이미지 게시. release 잡은 compose 종단 통과 후 main에서만. **실서버 배포는 안 하기로 결정**(사용자, 2026-08-12). 게시 이미지 실행: `docker-compose.ghcr.yml` 오버레이
-- [ ] **Step 6b (회고)** — 08-retrospective.md (P2 결론 이후 권장)
+- [x] **Step 6b (회고)** — 08-retrospective.md 작성됨 (**중간 회고** — §7의 체크리스트가 Step 5 실행 후 갱신 지점)
 
 각 Step 완료 시 README의 진행 상황 체크박스를 갱신한다.
 
@@ -175,7 +175,7 @@ docs/
  │                            004 파이프라인 순서, 005 서비스 경계,
  │                            006 빌드·모듈·Boot 4, 007 프론트 통합,
  │                            008 관측성, 009 학습 스택)
- └ 08-retrospective.md   원본 대비 개선점 (Step 6)
+ └ 08-retrospective.md   원본 대비 회고 (완료 — Step 5 실행 후 §7 갱신)
 ```
 
 - 문서 톤: 기존 문서(`03-color-theory.md`)를 기준 삼는다. **"무엇을"이 아니라 "왜"를 쓴다.** 검토했다 기각한 대안과 그 이유를 남긴다. 불릿 남발 금지, 서술형 위주.
