@@ -464,7 +464,8 @@ personal-color-ai/
 - [x] **Compose · CI** — 네 서비스 컨테이너화, GitHub Actions 4단계 검증 *(Step 6에서 앞당김)*
 - [x] **Step 4** — Next.js 프론트엔드: 업로드/웹캠 · 하이브리드 파이프라인 시각화 · 3축 게이지 · 인증/이력
 - [x] **Step 5 (도구)** — pseudo-label 생성 · CNN 학습(PyTorch→ONNX) · 평가(일치율·ECE) · Grad-CAM, 합성 데이터로 종단 검증
-- [x] **Step 5 (실행)** — FairFace 학습 · 수동 검증셋(76장) 평가: 규칙 엔진 **63.2%**(확신 케이스 한정, ±11%p) · **P2 재현 확인**(crop 모델 주목의 72%가 피부 밖) → [상세](docs/02-data-pipeline.md)
+- [x] **Step 5 (실행)** — FairFace 학습 · 수동 검증셋 평가 · **P2 재현 확인**(crop 모델 주목의 72%가 피부 밖) → [상세](docs/02-data-pipeline.md)
+- [x] **캘리브레이션 사이클 1회 완주** — 측정(63.2%) → 진단(h° 판별력 한계) → 재설계(b\*+L\*, [ADR-010](docs/07-decisions/ADR-010-undertone-recalibration.md)) → 새 검증셋 A/B(72.7% vs 69.1%, n=55, 통계적 동률·우세 경향 → 유지)
 - [x] **Step 6a** — 관측성: 상관관계 ID 전파(프론트→Spring→FastAPI) · 구조화 로그(ECS/JSON) · 요청 완료 로그
 - [x] **Step 6b (릴리스)** — main 머지 시 GHCR 이미지 게시 (종단 검증 통과분만, sha 태그로 재현 가능). *실서버 배포는 하지 않기로 결정*
 - [x] **Step 6b (회고)** — [08-retrospective.md](docs/08-retrospective.md) *(중간 회고 — P2 결론·정확도는 Step 5 실행 후 갱신)*
