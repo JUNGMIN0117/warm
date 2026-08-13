@@ -96,6 +96,34 @@ CachingAnalyzer                     캐시 히트면 아래로 내려가지 않�
 
 캐시 키는 `SHA-256(이미지) + include_stages`입니다. 플래그를 키에서 빼면 단계 이미지 없이 캐시된 응답이 시각화 요청에 반환되어 프론트가 조용히 빈 화면을 띄웁니다.
 
+### 분석 요청 한 건의 여정
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant B as 브라우저
+    participant N as Next.js<br/>(rewrites 프록시)
+    participant G as Spring 게이트웨이
+    participant R as Redis
+    participant M as ml-service
+    participant P as PostgreSQL
+
+    B->>N: POST /api/v1/analyses (사진)
+    N->>G: 중계 (같은 오리진 — CORS 없음)
+    Note over G: X-Request-Id 발급 · JWT 있으면 인증<br/>(없어도 통과 — 익명 허용)
+    G->>R: 캐시 조회 (SHA-256+stages)
+    alt 캐시 미스
+        Note over G: 서킷 확인 (열려 있으면 즉시 503)
+        G->>M: POST /v1/analyze (ID 전파)
+        M-->>G: 측정 JSON (얼굴 없으면 422 — 서킷은 세지 않음)
+        G->>R: 캐시 저장 (24h)
+    end
+    G->>P: 큐레이션 조인 (+로그인 시 이력 저장 — 이미지는 저장 안 함)
+    G-->>B: 익명 200 / 저장 201 (X-Request-Id 헤더)
+```
+
+상세 흐름(오류 경로·인증·관리자 편집)은 [docs/01-architecture.md §10](docs/01-architecture.md)에 있습니다.
+
 ---
 
 ## 기술 스택

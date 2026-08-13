@@ -206,13 +206,85 @@ JWT는 액세스 토큰 하나(12시간)뿐입니다. 리프레시 토큰과 폐
 
 ## 9. 아직 없는 것
 
-정직하게 남깁니다.
+정직하게 남깁니다. (이 절은 단계가 진행되며 갱신됩니다 — 아래는 2026-08-12 기준)
 
-**프론트엔드** (Step 4) — 파이프라인 시각화 UI가 소비할 단계 이미지는 이미 API에 있습니다.
+**실서버 운영 데이터** — 배포는 GHCR 이미지 게시까지로 결정했습니다(비용 대비 가치). 관측성(상관관계 ID·구조화 로그)은 갖춰져 있지만 실전 트래픽을 본 적이 없습니다.
 
-**학습 모델** (Step 5) — 현재 판정은 전부 규칙 엔진입니다. CNN은 대조군으로 추가되고, 규칙 엔진은 [ADR-002](07-decisions/ADR-002-data-strategy.md)에 따라 **영구 폴백**으로 남습니다.
+**통계적으로 유의한 정확도** — 현행 엔진 72.7%(n=55, 확신 케이스 한정)는 구엔진과 통계적 동률입니다. 유의성 있는 주장은 더 큰 검증셋(300장+)의 몫입니다.
 
-**컨테이너화와 CI** (Step 6) — 지금은 각 서비스를 손으로 띄웁니다. ml-service 이미지가 생기면 종단 테스트의 스텁을 실제 컨테이너로 교체합니다.
+**P1(조명 강건성)의 실측** — 동일 인물·다른 조명 사진 쌍이 필요합니다. 화이트밸런스 설계(ADR-004)가 실제로 판정을 안정시키는지는 미검증입니다.
+
+**E2E 브라우저 테스트** — 개발 중 자동화로 확인했지만 회귀 스위트에는 없습니다. 다섯 서비스 Compose 종단 검증이 그 자리의 절반을 메웁니다.
+
+~~프론트엔드 (Step 4)~~ · ~~학습 모델 (Step 5)~~ · ~~컨테이너화와 CI (Step 6)~~ — 완료되어 목록에서 빠졌습니다.
+
+---
+
+## 10. 시퀀스로 보는 요청 흐름
+
+### 분석 요청 — 캐시·서킷·큐레이션 조인이 한눈에
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant B as 브라우저
+    participant N as Next.js<br/>(rewrites 프록시)
+    participant G as Spring 게이트웨이
+    participant R as Redis
+    participant M as ml-service
+    participant P as PostgreSQL
+
+    B->>N: POST /api/v1/analyses (사진)
+    N->>G: 중계 (같은 오리진 — CORS 없음)
+    Note over G: X-Request-Id 발급 → MDC<br/>JWT 있으면 인증 (없어도 통과 — 익명 허용)
+    G->>R: 캐시 조회 (SHA-256(이미지)+stages)
+    alt 캐시 히트
+        R-->>G: 저장된 측정값
+    else 캐시 미스
+        Note over G: 서킷 브레이커 확인<br/>(열려 있으면 즉시 503 ANALYZER_UNAVAILABLE)
+        G->>M: POST /v1/analyze (X-Request-Id 전파)
+        alt 얼굴 없음 등
+            M-->>G: 422 → ImageRejectedException<br/>(서킷 브레이커는 실패로 세지 않음)
+            G-->>B: 422 NO_FACE_DETECTED
+        else 측정 성공
+            M-->>G: 측정 JSON (확률 분포·3축·전처리 보고)
+            G->>R: 캐시 저장 (TTL 24h)
+        end
+    end
+    G->>P: 큐레이션 조인 (팔레트·라벨·팁)
+    opt 로그인 상태
+        G->>P: 이력 저장 (이미지는 저장하지 않음 — 해시·수치만)
+    end
+    G-->>N: 측정+큐레이션 (익명 200 / 저장 201)
+    N-->>B: 결과 (X-Request-Id 헤더 포함)
+```
+
+읽는 포인트 셋. **캐시가 서킷보다 바깥**이라 ML 장애 중에도 아는 답은 서빙됩니다(§4). **422는 서킷 카운트에서 제외** — 사진 문제는 장애가 아닙니다(§4). **큐레이션은 캐시 뒤에서 조인** — 그래서 관리자가 팔레트를 편집하면 캐시 무효화 없이 즉시 반영됩니다(ADR-011).
+
+### 인증과 권한 — 익명이 기본, 관리자는 부트스트랩
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant B as 브라우저
+    participant G as Spring 게이트웨이
+    participant P as PostgreSQL
+
+    Note over G: 기동 시 — PCAI_ADMIN_EMAIL 있으면<br/>관리자 생성/승격 (없어도 정상 기동, ADR-011)
+
+    B->>G: POST /auth/login
+    G->>P: 사용자 조회 + BCrypt 대조
+    G-->>B: JWT (sub=id, role 클레임) + expiresAt + role
+
+    B->>G: GET /analyses (Bearer 토큰)
+    Note over G: 필터: 서명 검증 → role → ROLE_* 권한<br/>잘못된 토큰 = 익명 취급 (거절하지 않음)
+    G-->>B: 내 이력 (남의 id는 403이 아니라 404)
+
+    B->>G: PUT /admin/seasons/{code} (관리자 토큰)
+    Note over G: hasRole(ADMIN) — 익명 401 / USER 403
+    G->>P: 큐레이션 통째 교체 (시드와 같은 형태의 SQL)
+    G-->>B: 갱신된 SeasonView (즉시 반영)
+```
 
 **관측성** — 요청 상관관계 ID, 구조화 로그, 메트릭이 없습니다. 서킷 브레이커 상태도 노출되지 않아 회로가 열렸는지 외부에서 알 수 없습니다. Step 6에서 다룹니다.
 
